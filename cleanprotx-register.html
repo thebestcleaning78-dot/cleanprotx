@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CleanPro TX — Sign Up</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#0F1A2E;--navy2:#162236;
+  --teal:#3ECFAA;--teal2:#2BB894;--teal-light:#E8FAF5;
+  --white:#fff;--border:#E2E8F0;
+  --tx:#0F1A2E;--tx2:#4A5568;--tx3:#8A97A8;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--navy);min-height:100vh;display:flex;flex-direction:column;}
+nav{padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.07);}
+.nav-logo{display:flex;align-items:center;gap:8px;}
+.nav-logo-sq{width:30px;height:30px;border-radius:7px;background:var(--teal);display:flex;align-items:center;justify-content:center;}
+.nav-logo-sq svg{width:16px;height:16px;fill:#fff;}
+.nav-brand{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--white);}
+.nav-login{font-size:13px;color:rgba(255,255,255,0.5);text-decoration:none;}
+.nav-login span{color:var(--teal);}
+
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+.register-wrap{width:100%;max-width:480px;}
+.register-header{text-align:center;margin-bottom:32px;}
+.register-header h1{font-family:'Sora',sans-serif;font-size:28px;font-weight:800;color:var(--white);margin-bottom:8px;}
+.register-header p{font-size:14px;color:rgba(255,255,255,0.45);}
+.trial-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(62,207,170,0.12);border:1px solid rgba(62,207,170,0.25);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;color:var(--teal);margin-bottom:16px;text-transform:uppercase;letter-spacing:0.05em;}
+
+.form-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:32px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;}
+.form-group input,.form-group select{width:100%;padding:10px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:9px;font-size:14px;color:var(--white);outline:none;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;}
+.form-group input:focus,.form-group select:focus{border-color:var(--teal);background:rgba(62,207,170,0.05);}
+.form-group input::placeholder{color:rgba(255,255,255,0.2);}
+.form-group select option{background:var(--navy);color:var(--white);}
+
+/* Plan selector */
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.plan-opt{border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.15s;}
+.plan-opt:hover{border-color:rgba(62,207,170,0.4);}
+.plan-opt.selected{border-color:var(--teal);background:rgba(62,207,170,0.08);}
+.plan-opt.selected .plan-opt-featured{display:block;}
+.plan-name{font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:4px;}
+.plan-price{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--white);}
+.plan-per{font-size:10px;color:rgba(255,255,255,0.3);}
+.plan-opt.selected .plan-name{color:var(--teal);}
+.plan-popular{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);background:rgba(62,207,170,0.12);border-radius:10px;padding:2px 7px;display:inline-block;margin-bottom:4px;}
+
+.divider{height:1px;background:rgba(255,255,255,0.07);margin:18px 0;}
+
+.register-btn{width:100%;padding:13px;background:var(--teal);border:none;border-radius:10px;font-size:15px;font-weight:700;color:var(--navy);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.register-btn:hover{background:var(--teal2);}
+.register-btn:disabled{opacity:0.6;cursor:not-allowed;}
+.register-btn svg{width:16px;height:16px;fill:none;stroke:var(--navy);stroke-width:2;}
+
+.terms{font-size:11px;color:rgba(255,255,255,0.3);text-align:center;margin-top:14px;line-height:1.6;}
+.terms a{color:rgba(255,255,255,0.5);}
+
+.error-msg{background:rgba(226,75,74,0.12);border:1px solid rgba(226,75,74,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#f87171;margin-bottom:14px;display:none;}
+.success-box{text-align:center;padding:40px 20px;display:none;}
+.success-box svg{width:56px;height:56px;margin:0 auto 16px;}
+.success-box h2{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--white);margin-bottom:8px;}
+.success-box p{font-size:14px;color:rgba(255,255,255,0.5);line-height:1.6;}
+.success-box .redirect-note{margin-top:20px;font-size:13px;color:var(--teal);}
+
+.login-link{text-align:center;margin-top:20px;font-size:13px;color:rgba(255,255,255,0.35);}
+.login-link a{color:var(--teal);text-decoration:none;}
+
+@media(max-width:500px){
+  .form-row{grid-template-columns:1fr;}
+  .plan-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-sq"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+    <span class="nav-brand">CleanPro TX</span>
+  </div>
+  <a href="login.html" class="nav-login">Already have an account? <span>Log in →</span></a>
+</nav>
+
+<main>
+  <div class="register-wrap">
+    <div class="register-header">
+      <div class="trial-badge">✦ 14-day free trial</div>
+      <h1>Start your free trial</h1>
+      <p>No credit card required. Cancel anytime.</p>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-box" id="form-box">
+      <div class="error-msg" id="error-msg"></div>
+
+      <div class="form-row">
+        <div class="form-group"><label>First name *</label><input id="f-first" placeholder="María" required/></div>
+        <div class="form-group"><label>Last name *</label><input id="f-last" placeholder="Mendoza" required/></div>
+      </div>
+      <div class="form-group"><label>Business name *</label><input id="f-biz" placeholder="My Cleaning Co." required/></div>
+      <div class="form-group">
+        <label>Service type *</label>
+        <select id="f-service">
+          <option value="">Select your service...</option>
+          <option>Cleaning</option>
+          <option>Lawn & Garden</option>
+          <option>Plumbing</option>
+          <option>HVAC</option>
+          <option>Electrical</option>
+          <option>Painting</option>
+          <option>Pest Control</option>
+          <option>Handyman</option>
+          <option>Pool Service</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Email *</label><input id="f-email" type="email" placeholder="you@business.com" required/></div>
+        <div class="form-group"><label>Phone</label><input id="f-phone" type="tel" placeholder="(806) 555-0000"/></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- PLAN SELECTOR -->
+      <div class="form-group">
+        <label>Choose your plan</label>
+        <div class="plan-grid">
+          <div class="plan-opt" id="plan-Basic" onclick="selectPlan('Basic')">
+            <div class="plan-name">Basic</div>
+            <div class="plan-price">$29</div>
+            <div class="plan-per">/month</div>
+          </div>
+          <div class="plan-opt selected" id="plan-Pro" onclick="selectPlan('Pro')">
+            <div class="plan-popular">Most popular</div>
+            <div class="plan-name">Pro</div>
+            <div class="plan-price">$59</div>
+            <div class="plan-per">/month</div>
+          </div>
+          <div class="plan-opt" id="plan-Enterprise" onclick="selectPlan('Enterprise')">
+            <div class="plan-name">Enterprise</div>
+            <div class="plan-price">$129</div>
+            <div class="plan-per">/month</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-group"><label>Password *</label><input id="f-pass" type="password" placeholder="Min. 8 characters" required/></div>
+      <div class="form-group"><label>Confirm password *</label><input id="f-pass2" type="password" placeholder="Repeat password" required/></div>
+
+      <button class="register-btn" id="register-btn" onclick="handleRegister()">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="var(--navy)"/></svg>
+        Create free account → Stripe checkout
+      </button>
+      <div class="terms">By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.<br/>After your 14-day trial, your chosen plan will auto-renew.</div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="form-box success-box" id="success-box">
+      <svg viewBox="0 0 56 56" fill="none">
+        <circle cx="28" cy="28" r="28" fill="rgba(62,207,170,0.15)"/>
+        <path d="M18 28l7 7 13-13" stroke="#3ECFAA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2>Account created!</h2>
+      <p>Check your email to confirm your account.<br/>Then you'll be redirected to complete your subscription.</p>
+      <div class="redirect-note" id="redirect-note">Redirecting to Stripe checkout...</div>
+    </div>
+
+    <div class="login-link">Already have an account? <a href="login.html">Log in here →</a></div>
+  </div>
+</main>
+
+<script>
+const { createClient } = supabase;
+const db = createClient(
+  'https://yfqoncqoerleoaqxvaie.supabase.co',
+  'sb_publishable_cbrrFqLqJMkUXJ4icNOn9g_lEv4NneF'
+);
+
+const PRICE_IDS = {
+  Basic: 'price_1TJyXEE9FBbpUTkvuBbvkiy8',
+  Pro: 'price_1TJyXnE9FBbpUTkv7zTLAncW',
+  Enterprise: 'price_1TJyYME9FBbpUTkvS3572BwF'
+};
+
+let selectedPlan = 'Pro';
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan-opt').forEach(el => el.classList.remove('selected'));
+  document.getElementById('plan-' + plan).classList.add('selected');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+async function handleRegister() {
+  hideError();
+  const btn = document.getElementById('register-btn');
+  const first = document.getElementById('f-first').value.trim();
+  const last = document.getElementById('f-last').value.trim();
+  const biz = document.getElementById('f-biz').value.trim();
+  const service = document.getElementById('f-service').value;
+  const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const pass = document.getElementById('f-pass').value;
+  const pass2 = document.getElementById('f-pass2').value;
+
+  if (!first || !email || !biz || !pass) { showError('Please fill in all required fields.'); return; }
+  if (!service) { showError('Please select your service type.'); return; }
+  if (pass.length < 8) { showError('Password must be at least 8 characters.'); return; }
+  if (pass !== pass2) { showError('Passwords do not match.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--navy)" fill="none" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Creating account...';
+
+  try {
+    // 1. Create auth user in Supabase
+    const { data: authData, error: authError } = await db.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: {
+          full_name: first + ' ' + last,
+          business_name: biz
+        }
+      }
+    });
+
+    if (authError) throw authError;
+
+    // 2. Save business profile
+    const { error: bizError } = await db.from('businesses').insert([{
+      owner_id: authData.user?.id,
+      business_name: biz,
+      owner_name: first + ' ' + last,
+      email: email,
+      phone: phone,
+      service_type: service,
+      plan: selectedPlan,
+      status: 'trial'
+    }]);
+
+    if (bizError) throw bizError;
+
+    // 3. Show success + redirect to Stripe
+    document.getElementById('form-box').style.display = 'none';
+    document.getElementById('success-box').style.display = 'block';
+
+    // 4. Redirect to Stripe checkout after 2 seconds
+    // NOTE: In production, create checkout session via Supabase Edge Function
+    // For now, redirect to Stripe payment link
+    setTimeout(() => {
+      const stripeLinks = {
+        Basic: 'https://buy.stripe.com/test_basic',
+        Pro: 'https://buy.stripe.com/test_pro',
+        Enterprise: 'https://buy.stripe.com/test_enterprise'
+      };
+      document.getElementById('redirect-note').textContent =
+        '✓ Account saved! Connect Stripe Billing via Supabase Edge Function to complete checkout.';
+    }, 2000);
+
+  } catch (err) {
+    showError(err.message || 'Something went wrong. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="var(--navy)"/></svg> Create free account → Stripe checkout';
+  }
+}
+</script>
+</body>
+</html>
