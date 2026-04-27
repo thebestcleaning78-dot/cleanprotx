@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CleanPro TX — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#0A1628;
+  --navy2:#0F1E35;
+  --teal:#2DD4BF;
+  --teal2:#14B8A4;
+  --white:#fff;
+  --tx:rgba(255,255,255,0.9);
+  --tx2:rgba(255,255,255,0.5);
+  --tx3:rgba(255,255,255,0.25);
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(255,255,255,0.14);
+  --card:rgba(255,255,255,0.04);
+}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  background:var(--navy);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow-x:hidden;
+}
+/* Background mesh */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(45,212,191,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(14,165,233,0.06) 0%, transparent 50%);
+  pointer-events:none;
+}
+nav{
+  padding:18px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  position:relative;z-index:1;
+}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--teal),#0EA5E9);
+  display:flex;align-items:center;justify-content:center;
+}
+.logo-mark svg{width:16px;height:16px;fill:#fff;}
+.logo-name{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--white);}
+.nav-link{font-size:13px;color:var(--tx2);}
+.nav-link a{color:var(--teal);text-decoration:none;font-weight:600;}
+main{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:40px 20px;position:relative;z-index:1;
+}
+.wrap{width:100%;max-width:400px;}
+.hdr{text-align:center;margin-bottom:28px;}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.2);
+  border-radius:20px;padding:5px 14px;
+  font-size:12px;font-weight:600;color:var(--teal);
+  margin-bottom:16px;
+}
+.chip-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);}
+h1{font-family:'Sora',sans-serif;font-size:30px;font-weight:800;color:var(--white);margin-bottom:6px;}
+.sub{font-size:14px;color:var(--tx2);line-height:1.5;}
+.card{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:16px;padding:28px;
+}
+.grp{margin-bottom:16px;}
+.lbl{
+  display:block;font-size:11px;font-weight:600;
+  color:var(--tx3);text-transform:uppercase;
+  letter-spacing:0.07em;margin-bottom:6px;
+}
+.inp{
+  width:100%;padding:11px 14px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border2);
+  border-radius:10px;font-size:14px;
+  color:var(--white);outline:none;
+  font-family:'DM Sans',sans-serif;
+  transition:border-color 0.2s,background 0.2s;
+}
+.inp:focus{border-color:var(--teal);background:rgba(45,212,191,0.05);}
+.inp::placeholder{color:var(--tx3);}
+.forgot{
+  font-size:12px;color:var(--teal);
+  cursor:pointer;display:block;
+  text-align:right;margin-top:5px;
+  text-decoration:none;
+}
+.forgot:hover{text-decoration:underline;}
+.btn{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--teal),#0EA5E9);
+  border:none;border-radius:10px;
+  font-size:15px;font-weight:700;
+  color:#0A1628;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  margin-top:8px;transition:opacity 0.2s,transform 0.1s;
+}
+.btn:hover{opacity:0.9;}
+.btn:active{transform:scale(0.99);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.err{
+  background:rgba(239,68,68,0.1);
+  border:1px solid rgba(239,68,68,0.25);
+  border-radius:8px;padding:10px 14px;
+  font-size:13px;color:#FCA5A5;
+  margin-bottom:14px;display:none;
+}
+.ok-msg{
+  background:rgba(45,212,191,0.1);
+  border:1px solid rgba(45,212,191,0.25);
+  border-radius:8px;padding:10px 14px;
+  font-size:13px;color:var(--teal);
+  margin-bottom:14px;display:none;
+}
+.divider{
+  text-align:center;font-size:12px;color:var(--tx3);
+  margin:18px 0;position:relative;
+}
+.divider::before{
+  content:'';position:absolute;
+  top:50%;left:0;right:0;height:1px;
+  background:var(--border);
+}
+.divider span{
+  background:var(--navy2);
+  padding:0 12px;position:relative;
+}
+.signup-row{
+  text-align:center;font-size:13px;
+  color:var(--tx2);margin-top:16px;
+}
+.signup-row a{color:var(--teal);text-decoration:none;font-weight:600;}
+footer{
+  padding:18px 28px;text-align:center;
+  font-size:12px;color:var(--tx3);
+  border-top:1px solid var(--border);
+  position:relative;z-index:1;
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+    <span class="logo-name">CleanPro TX</span>
+  </div>
+  <div class="nav-link">No account? <a href="/register.html">Start free trial</a></div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <div class="hdr">
+      <div class="chip"><div class="chip-dot"></div>Professional Dashboard</div>
+      <h1>Welcome back</h1>
+      <p class="sub" id="sub-msg">Sign in to your CleanPro TX dashboard</p>
+    </div>
+    <div class="card">
+      <div class="err" id="err"></div>
+      <div class="ok-msg" id="ok-msg"></div>
+      <div class="grp">
+        <span class="lbl">Email address</span>
+        <input class="inp" id="email" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="grp">
+        <span class="lbl">Password</span>
+        <input class="inp" id="pass" type="password" placeholder="Your password" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <a class="forgot" onclick="forgotPass()">Forgot password?</a>
+      </div>
+      <button class="btn" id="btn" onclick="doLogin()">Sign in to dashboard</button>
+      <div class="divider"><span>or</span></div>
+      <div class="signup-row">New to CleanPro TX? <a href="/register.html">Start your 14-day free trial →</a></div>
+    </div>
+  </div>
+</main>
+
+<footer>© 2026 CleanPro TX — Built in Texas 🤠</footer>
+
+<script>
+const sb = supabase.createClient(
+  'https://yfqoncqoerleoaqxvaie.supabase.co',
+  'sb_publishable_cbrrFqLqJMkUXJ4icNOn9g_lEv4NneF'
+);
+
+// Redirect if already logged in
+sb.auth.getSession().then(function(r){ if(r.data.session) location.href='/dashboard.html'; });
+
+// Handle URL params (from register redirect)
+(function(){
+  var p = new URLSearchParams(location.search);
+  var email = p.get('email');
+  var isNew = p.get('new');
+  if(email) document.getElementById('email').value = decodeURIComponent(email);
+  if(isNew){
+    var ok = document.getElementById('ok-msg');
+    ok.textContent = '✓ Account created! Enter your password to continue.';
+    ok.style.display = 'block';
+    if(email) setTimeout(function(){ document.getElementById('pass').focus(); }, 200);
+  }
+})();
+
+function showErr(msg){
+  var el=document.getElementById('err');
+  el.textContent=msg; el.style.display='block';
+}
+
+async function doLogin(){
+  document.getElementById('err').style.display='none';
+  var email=document.getElementById('email').value.trim();
+  var pass=document.getElementById('pass').value;
+  if(!email||!pass){ showErr('Please enter your email and password.'); return; }
+  var btn=document.getElementById('btn');
+  btn.textContent='Signing in...'; btn.disabled=true;
+  var res=await sb.auth.signInWithPassword({email,password:pass});
+  if(res.error){ showErr(res.error.message); btn.textContent='Sign in to dashboard'; btn.disabled=false; return; }
+  location.href='/dashboard.html';
+}
+
+async function forgotPass(){
+  var email=document.getElementById('email').value.trim();
+  if(!email){ showErr('Enter your email first.'); return; }
+  await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/reset-password.html'});
+  var ok=document.getElementById('ok-msg');
+  ok.textContent='Password reset email sent! Check your inbox.';
+  ok.style.display='block';
+}
+</script>
+</body>
+</html>
