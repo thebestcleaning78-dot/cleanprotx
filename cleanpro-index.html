@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="CleanPro TX — The all-in-one business dashboard for cleaning professionals in Texas"/>
+<title>CleanPro TX — Run Your Cleaning Business Like a Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --teal:#3ECFAA;--teal-d:#2BB894;--teal-l:#E8FAF5;
+  --ink:#0B1628;--ink2:#162236;--ink3:#1E3050;
+  --white:#FFFFFF;--gray:#6B7280;--border:#E5E7EB;
+  --bg:#F4FFFE;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--ink);color:var(--white);overflow-x:hidden;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(11,22,40,0.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(62,207,170,0.1);}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--teal),#10B981);display:flex;align-items:center;justify-content:center;}
+.nav-logo svg{width:17px;height:17px;fill:white;}
+.nav-name{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;color:white;}
+.nav-links{display:flex;align-items:center;gap:6px;}
+.nav-link{font-size:13px;color:rgba(255,255,255,0.6);padding:7px 14px;border-radius:8px;text-decoration:none;transition:all .2s;}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.06);}
+.nav-btn{padding:9px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.nav-btn-outline{background:transparent;color:white;border:1.5px solid rgba(255,255,255,0.2);}
+.nav-btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+.nav-btn-primary{background:var(--teal);color:var(--ink);border:none;}
+.nav-btn-primary:hover{background:var(--teal-d);transform:translateY(-1px);}
+@media(max-width:640px){.nav-links{display:none;}}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:100px 20px 60px;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(62,207,170,0.12) 0%,transparent 70%),linear-gradient(180deg,var(--ink) 0%,var(--ink2) 100%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(62,207,170,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(62,207,170,0.04) 1px,transparent 1px);background-size:60px 60px;}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;}
+.hero-orb1{width:500px;height:500px;background:rgba(62,207,170,0.08);top:-100px;left:-100px;}
+.hero-orb2{width:400px;height:400px;background:rgba(16,185,129,0.06);bottom:-50px;right:-50px;}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:800px;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(62,207,170,0.12);border:1px solid rgba(62,207,170,0.25);border-radius:99px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--teal);margin-bottom:24px;}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hero h1{font-family:'Sora',sans-serif;font-size:clamp(36px,6vw,68px);font-weight:800;line-height:1.05;letter-spacing:-.03em;margin-bottom:20px;}
+.hero h1 .accent{color:var(--teal);}
+.hero h1 .dim{color:rgba(255,255,255,0.4);}
+.hero-sub{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,0.55);line-height:1.7;max-width:560px;margin:0 auto 36px;}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:48px;}
+.btn-hero-primary{padding:15px 32px;border-radius:99px;background:var(--teal);color:var(--ink);font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 32px rgba(62,207,170,0.3);}
+.btn-hero-primary:hover{background:var(--teal-d);transform:translateY(-2px);box-shadow:0 12px 40px rgba(62,207,170,0.4);}
+.btn-hero-outline{padding:15px 32px;border-radius:99px;background:transparent;color:white;font-size:15px;font-weight:600;border:1.5px solid rgba(255,255,255,0.2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;}
+.btn-hero-outline:hover{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.05);}
+.hero-trust{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,0.45);font-weight:500;}
+
+/* DASHBOARD PREVIEW */
+.preview-wrap{position:relative;max-width:900px;margin:0 auto;padding:0 20px 80px;}
+.preview-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(62,207,170,0.15),transparent 70%);pointer-events:none;}
+.preview-img{background:var(--ink2);border-radius:16px;border:1px solid rgba(62,207,170,0.2);overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.5);position:relative;}
+.preview-bar{background:var(--ink3);padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.preview-dot{width:10px;height:10px;border-radius:50%;}
+.preview-url{flex:1;background:rgba(255,255,255,0.05);border-radius:6px;padding:5px 12px;font-size:11px;color:rgba(255,255,255,0.3);text-align:center;font-family:monospace;}
+.preview-body{padding:20px;}
+.preview-banner{background:linear-gradient(135deg,#162236,#1E3A50,rgba(62,207,170,0.3));border-radius:12px;padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.preview-banner-title{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;color:white;margin-bottom:2px;}
+.preview-banner-sub{font-size:12px;color:rgba(255,255,255,0.5);}
+.preview-banner-rev{text-align:right;}
+.preview-banner-rev-lbl{font-size:10px;color:rgba(255,255,255,0.4);}
+.preview-banner-rev-val{font-family:'Sora',sans-serif;font-size:28px;font-weight:800;color:white;}
+.preview-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.preview-kpi{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;}
+.preview-kpi-lbl{font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.preview-kpi-val{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:white;}
+.preview-kpi-sub{font-size:9px;color:rgba(255,255,255,0.25);margin-top:3px;}
+.preview-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.preview-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;}
+.preview-card-title{font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:10px;}
+.preview-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.preview-item:last-child{border-bottom:none;}
+.preview-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.preview-item-name{font-size:11px;color:rgba(255,255,255,0.7);flex:1;}
+.preview-item-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:99px;}
+
+/* FEATURES */
+.features{padding:80px 20px;background:var(--ink2);}
+.features-inner{max-width:1100px;margin:0 auto;}
+.section-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);margin-bottom:12px;}
+.section-tag::before{content:'';width:20px;height:2px;background:var(--teal);border-radius:2px;}
+.section-title{font-family:'Sora',sans-serif;font-size:clamp(26px,4vw,42px);font-weight:800;letter-spacing:-.02em;line-height:1.1;margin-bottom:12px;}
+.section-title .accent{color:var(--teal);}
+.section-sub{font-size:15px;color:rgba(255,255,255,0.45);line-height:1.7;max-width:500px;margin-bottom:56px;}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.feat{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;transition:all .25s;position:relative;overflow:hidden;}
+.feat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--teal),transparent);transform:scaleX(0);transition:transform .3s;transform-origin:left;}
+.feat:hover{border-color:rgba(62,207,170,0.2);background:rgba(62,207,170,0.04);transform:translateY(-3px);}
+.feat:hover::after{transform:scaleX(1);}
+.feat-icon{width:44px;height:44px;border-radius:12px;background:rgba(62,207,170,0.1);border:1px solid rgba(62,207,170,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;}
+.feat-title{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:8px;}
+.feat-desc{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.6;}
+@media(max-width:768px){.features-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.features-grid{grid-template-columns:1fr;}}
+
+/* PRICING */
+.pricing{padding:80px 20px;background:var(--ink);}
+.pricing-inner{max-width:1000px;margin:0 auto;text-align:center;}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;align-items:start;}
+.plan{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:28px;text-align:left;position:relative;transition:all .25s;}
+.plan:hover{transform:translateY(-4px);}
+.plan.popular{border-color:var(--teal);background:rgba(62,207,170,0.05);box-shadow:0 0 60px rgba(62,207,170,0.08);}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--teal);color:var(--ink);font-size:11px;font-weight:700;padding:4px 14px;border-radius:99px;white-space:nowrap;}
+.plan-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.plan-price{font-family:'Sora',sans-serif;font-size:44px;font-weight:800;color:white;line-height:1;margin-bottom:4px;}
+.plan-price span{font-size:18px;font-weight:500;color:rgba(255,255,255,0.4);}
+.plan-cycle{font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:6px;}
+.plan-desc{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.plan-btn{width:100%;padding:12px;border-radius:12px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;margin-bottom:20px;text-decoration:none;display:block;text-align:center;}
+.plan-btn-primary{background:var(--teal);color:var(--ink);}
+.plan-btn-primary:hover{background:var(--teal-d);}
+.plan-btn-outline{background:transparent;color:white;border:1.5px solid rgba(255,255,255,0.15);}
+.plan-btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+.plan-feat{display:flex;gap:8px;font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;line-height:1.4;}
+.plan-feat::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0;}
+.plan-feat.dim::before{content:'—';color:rgba(255,255,255,0.2);}
+.plan-feat.dim{color:rgba(255,255,255,0.25);}
+@media(max-width:900px){.plans{grid-template-columns:1fr;max-width:400px;margin-left:auto;margin-right:auto;}}
+
+/* CTA */
+.cta-section{padding:80px 20px;background:var(--ink2);text-align:center;}
+.cta-inner{max-width:600px;margin:0 auto;}
+.cta-title{font-family:'Sora',sans-serif;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.02em;margin-bottom:14px;}
+.cta-sub{font-size:15px;color:rgba(255,255,255,0.45);margin-bottom:32px;line-height:1.7;}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.cta-note{font-size:12px;color:rgba(255,255,255,0.25);margin-top:16px;}
+
+/* FOOTER */
+footer{background:var(--ink);padding:32px 20px;border-top:1px solid rgba(255,255,255,0.06);}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.footer-brand{display:flex;align-items:center;gap:8px;}
+.footer-logo{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--teal),#10B981);display:flex;align-items:center;justify-content:center;}
+.footer-logo svg{width:13px;height:13px;fill:white;}
+.footer-name{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:white;}
+.footer-links{display:flex;gap:20px;flex-wrap:wrap;}
+.footer-link{font-size:12px;color:rgba(255,255,255,0.3);text-decoration:none;transition:color .2s;}
+.footer-link:hover{color:var(--teal);}
+.footer-copy{font-size:12px;color:rgba(255,255,255,0.2);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo"><svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/></svg></div>
+    <div class="nav-name">CleanPro TX</div>
+  </div>
+  <div class="nav-links">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#pricing" class="nav-link">Pricing</a>
+    <a href="https://cleansavertx.com" class="nav-link" target="_blank">CleanSaver AI</a>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/login.html" class="nav-btn nav-btn-outline">Sign in</a>
+    <a href="/dashboard.html" class="nav-btn nav-btn-primary">Start free trial →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-orb hero-orb1"></div>
+  <div class="hero-orb hero-orb2"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="hero-badge-dot"></span>Built for Texas cleaning professionals</div>
+    <h1>Run your cleaning business<br/><span class="accent">like a pro.</span> <span class="dim">Finally.</span></h1>
+    <p class="hero-sub">Manage clients, send invoices, get leads from CleanSaver AI, and automate your entire cleaning business — all from one dashboard.</p>
+    <div class="hero-ctas">
+      <a href="/dashboard.html" class="btn-hero-primary">🚀 Start free 14-day trial</a>
+      <a href="#features" class="btn-hero-outline">See all features →</a>
+    </div>
+    <div class="hero-trust">
+      <div class="trust-item">✓ No credit card required</div>
+      <div class="trust-item">✓ 14-day free trial</div>
+      <div class="trust-item">✓ Cancel anytime</div>
+      <div class="trust-item">✓ Plans from $29/mo</div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD PREVIEW -->
+<div class="preview-wrap">
+  <div class="preview-glow"></div>
+  <div class="preview-img">
+    <div class="preview-bar">
+      <div class="preview-dot" style="background:#FF5F57;"></div>
+      <div class="preview-dot" style="background:#FFBD2E;"></div>
+      <div class="preview-dot" style="background:#28CA41;"></div>
+      <div class="preview-url">cleanprotx.vercel.app/dashboard</div>
+    </div>
+    <div class="preview-body">
+      <div class="preview-banner">
+        <div>
+          <div class="preview-banner-title">Good morning! ☀️</div>
+          <div class="preview-banner-sub">Monday, June 2026 — Lubbock, TX</div>
+        </div>
+        <div class="preview-banner-rev">
+          <div class="preview-banner-rev-lbl">Revenue this month</div>
+          <div class="preview-banner-rev-val">$4,280</div>
+        </div>
+      </div>
+      <div class="preview-kpis">
+        <div class="preview-kpi"><div class="preview-kpi-lbl">Jobs today</div><div class="preview-kpi-val" style="color:var(--teal);">3</div><div class="preview-kpi-sub">scheduled</div></div>
+        <div class="preview-kpi"><div class="preview-kpi-lbl">Outstanding</div><div class="preview-kpi-val" style="color:#F59E0B;">$840</div><div class="preview-kpi-sub">unpaid invoices</div></div>
+        <div class="preview-kpi"><div class="preview-kpi-lbl">New leads</div><div class="preview-kpi-val" style="color:#A78BFA;">5</div><div class="preview-kpi-sub">from CleanSaver</div></div>
+        <div class="preview-kpi"><div class="preview-kpi-lbl">Clients</div><div class="preview-kpi-val">24</div><div class="preview-kpi-sub">active</div></div>
+      </div>
+      <div class="preview-row">
+        <div class="preview-card">
+          <div class="preview-card-title">Today's Jobs</div>
+          <div class="preview-item"><div class="preview-item-dot" style="background:#3ECFAA;"></div><div class="preview-item-name">Maria Rodriguez</div><div class="preview-item-badge" style="background:#D1FAE5;color:#065F46;">9:00 AM</div></div>
+          <div class="preview-item"><div class="preview-item-dot" style="background:#F59E0B;"></div><div class="preview-item-name">Kurt Caddel</div><div class="preview-item-badge" style="background:#FEF3C7;color:#92400E;">1:00 PM</div></div>
+          <div class="preview-item"><div class="preview-item-dot" style="background:#A78BFA;"></div><div class="preview-item-name">Valeri Malone</div><div class="preview-item-badge" style="background:#EDE9FE;color:#5B21B6;">3:30 PM</div></div>
+        </div>
+        <div class="preview-card">
+          <div class="preview-card-title">Unpaid Invoices</div>
+          <div class="preview-item"><div class="preview-item-dot" style="background:#EF4444;"></div><div class="preview-item-name">Larry Lambright</div><div class="preview-item-badge" style="background:#FEE2E2;color:#991B1B;">$200</div></div>
+          <div class="preview-item"><div class="preview-item-dot" style="background:#F59E0B;"></div><div class="preview-item-name">Taylon Snipes</div><div class="preview-item-badge" style="background:#FEF3C7;color:#92400E;">$320</div></div>
+          <div class="preview-item"><div class="preview-item-dot" style="background:#3B82F6;"></div><div class="preview-item-name">Christina Cooper</div><div class="preview-item-badge" style="background:#DBEAFE;color:#1E40AF;">$300</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="section-tag">Everything you need</div>
+    <div class="section-title">One dashboard.<br/><span class="accent">Infinite possibilities.</span></div>
+    <div class="section-sub">Stop managing your business in your head. CleanPro TX puts everything in one place so you can focus on what you do best — cleaning.</div>
+    <div class="features-grid">
+      <div class="feat"><div class="feat-icon">📱</div><div class="feat-title">Client Management</div><div class="feat-desc">Keep all your client info, job history, and notes in one place. Never forget a detail again.</div></div>
+      <div class="feat"><div class="feat-icon">💳</div><div class="feat-title">Auto Invoicing</div><div class="feat-desc">Send professional invoices with one click. Clients pay online via Stripe. Track who has opened and paid.</div></div>
+      <div class="feat"><div class="feat-icon">🤖</div><div class="feat-title">AI Estimate Tool</div><div class="feat-desc">Upload photos of a space and our AI calculates the price instantly. No more guessing or under-charging.</div></div>
+      <div class="feat"><div class="feat-icon">🎯</div><div class="feat-title">CleanSaver AI Leads</div><div class="feat-desc">Get quality leads from homeowners in your area through CleanSaver AI marketplace. Grow on autopilot.</div></div>
+      <div class="feat"><div class="feat-icon">📅</div><div class="feat-title">Google Calendar Sync</div><div class="feat-desc">All your jobs sync automatically to Google Calendar. Never double-book or miss an appointment.</div></div>
+      <div class="feat"><div class="feat-icon">💰</div><div class="feat-title">Automated Late Fees</div><div class="feat-desc">$20 late fee applied automatically after 2 days. SMS and WhatsApp reminders sent to clients.</div></div>
+      <div class="feat"><div class="feat-icon">👥</div><div class="feat-title">Employee Management</div><div class="feat-desc">Track timesheets, calculate pay by service type, and manage your entire team from one place.</div></div>
+      <div class="feat"><div class="feat-icon">📊</div><div class="feat-title">P&L Reports</div><div class="feat-desc">Full profit & loss accounting, expense tracking, and IRS Schedule C summary for tax season.</div></div>
+      <div class="feat"><div class="feat-icon">📸</div><div class="feat-title">Before & After Gallery</div><div class="feat-desc">Store and showcase your best work. Share with clients and on social media directly from the app.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-tag" style="justify-content:center;">Simple pricing</div>
+    <div class="section-title">Start free. <span class="accent">Grow fast.</span></div>
+    <div class="section-sub" style="margin:0 auto 0;">No hidden fees. Cancel anytime.</div>
+    <div class="plans">
+      <div class="plan">
+        <div class="plan-name">Basic</div>
+        <div class="plan-price">$29<span>/mo</span></div>
+        <div class="plan-cycle">billed monthly</div>
+        <div class="plan-desc">Perfect for solo cleaning professionals getting started.</div>
+        <a href="/dashboard.html" class="plan-btn plan-btn-outline">Get started →</a>
+        <div class="plan-feat">Up to 25 clients</div>
+        <div class="plan-feat">50 jobs per month</div>
+        <div class="plan-feat">Invoicing & payments</div>
+        <div class="plan-feat">Google Calendar sync</div>
+        <div class="plan-feat">Before & after gallery</div>
+        <div class="plan-feat dim">CleanSaver AI leads</div>
+        <div class="plan-feat dim">AI Estimate tool</div>
+        <div class="plan-feat dim">SMS automation</div>
+      </div>
+      <div class="plan popular">
+        <div class="plan-badge">⭐ Most Popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$59<span>/mo</span></div>
+        <div class="plan-cycle">billed monthly</div>
+        <div class="plan-desc">For growing businesses that want to automate and scale.</div>
+        <a href="/dashboard.html" class="plan-btn plan-btn-primary">Start Pro trial →</a>
+        <div class="plan-feat">Unlimited clients & jobs</div>
+        <div class="plan-feat">CleanSaver AI leads</div>
+        <div class="plan-feat">AI Estimate from photos</div>
+        <div class="plan-feat">SMS & WhatsApp automation</div>
+        <div class="plan-feat">Automated late fees</div>
+        <div class="plan-feat">Full P&L accounting</div>
+        <div class="plan-feat">Invoice open tracking</div>
+        <div class="plan-feat dim">Employee management</div>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">$129<span>/mo</span></div>
+        <div class="plan-cycle">billed monthly</div>
+        <div class="plan-desc">For established companies with teams and multiple locations.</div>
+        <a href="/dashboard.html" class="plan-btn plan-btn-outline">Contact sales →</a>
+        <div class="plan-feat">Everything in Pro</div>
+        <div class="plan-feat">Employee management</div>
+        <div class="plan-feat">Timesheet & payroll</div>
+        <div class="plan-feat">Multiple locations</div>
+        <div class="plan-feat">Custom branding</div>
+        <div class="plan-feat">Priority support</div>
+        <div class="plan-feat">Dedicated onboarding</div>
+        <div class="plan-feat">SLA guarantee</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <div class="cta-title">Ready to grow your<br/><span style="color:var(--teal);">cleaning business?</span></div>
+    <div class="cta-sub">Join cleaning professionals across Texas who use CleanPro TX to manage, automate, and grow their business every day.</div>
+    <div class="cta-btns">
+      <a href="/dashboard.html" class="btn-hero-primary">🚀 Start free 14-day trial</a>
+      <a href="/login.html" class="btn-hero-outline">Sign in →</a>
+    </div>
+    <div class="cta-note">No credit card required · Cancel anytime · Plans from $29/month</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo"><svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/></svg></div>
+      <div class="footer-name">CleanPro TX</div>
+    </div>
+    <div class="footer-links">
+      <a href="#features" class="footer-link">Features</a>
+      <a href="#pricing" class="footer-link">Pricing</a>
+      <a href="https://cleansavertx.com" class="footer-link">CleanSaver AI</a>
+      <a href="mailto:support@cleanprotx.com" class="footer-link">Support</a>
+      <a href="/login.html" class="footer-link">Login</a>
+    </div>
+    <div class="footer-copy">© 2026 CleanPro TX. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>
