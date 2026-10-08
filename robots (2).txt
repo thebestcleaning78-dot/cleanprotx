@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Paginas privadas (no deben salir en Google)
+Disallow: /dashboard
+Disallow: /login
+
+Sitemap: https://cleanprotx.vercel.app/sitemap.xml
