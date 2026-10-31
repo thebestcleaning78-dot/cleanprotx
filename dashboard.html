@@ -486,16 +486,33 @@ tbody tr:hover td{background:#FAFBFF;}
     <!-- LEADS -->
     <div id="s-leads" class="sec">
       <div class="kpis">
-        <div class="kpi"><div class="kpi-lbl">New</div><div class="kpi-val" style="color:var(--amber);" id="leads-new">0</div></div>
-        <div class="kpi"><div class="kpi-lbl">Accepted</div><div class="kpi-val" style="color:var(--green);" id="leads-accepted">0</div></div>
-        <div class="kpi"><div class="kpi-lbl">Converted</div><div class="kpi-val" style="color:var(--purple);" id="leads-converted">0</div></div>
+        <div class="kpi"><div class="kpi-lbl">Leads this week</div><div class="kpi-val" style="color:var(--amber);" id="leads-new">0</div></div>
+        <div class="kpi"><div class="kpi-lbl">Spent this week</div><div class="kpi-val" style="color:var(--green);" id="leads-accepted">$0</div></div>
+        <div class="kpi"><div class="kpi-lbl">Weekly budget</div><div class="kpi-val" style="color:var(--purple);" id="leads-converted">$0</div></div>
+      </div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-header"><div class="card-title">Get leads from CleanSaver AI</div></div>
+        <div style="padding:4px 18px 18px;font-size:13px;line-height:1.6;color:var(--tx2);">
+          <p style="margin:0 0 10px;">When a homeowner requests a service in your area, the lead is sent to you automatically and charged to your card. Leads start at <b>$15</b> (most are about $20). Each lead goes to <b>3 pros at most</b>. You never spend more than your weekly budget. Spam or a fake phone number? Report it within 7 days and we refund you.</p>
+          <div id="ls-card" style="margin-bottom:12px;"></div>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:12px;"><input type="checkbox" id="ls-enabled"> Receive leads</label>
+          <div style="font-weight:600;margin-bottom:4px;">Services you offer</div>
+          <div id="ls-services" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0 12px;margin-bottom:12px;"></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px;">
+            <label>ZIP codes you serve<br><input id="ls-zips" class="search-input" style="width:100%;" placeholder="79410, 79412, 79414"></label>
+            <label>Weekly budget ($)<br><input id="ls-budget" class="search-input" style="width:100%;" type="number" min="0" step="5" placeholder="100"></label>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveLeadSettings()">Save lead settings</button>
+        </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Leads from CleanSaver AI</div></div>
+        <div class="card-header"><div class="card-title">Leads you received</div></div>
+        <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th>Client</th><th>Service</th><th>Location</th><th>Date</th><th>Budget</th><th>Lead Cost</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="leads-table"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+          <thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Contact</th><th>Cost</th><th></th></tr></thead>
+          <tbody id="leads-table"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody>
         </table>
+        </div>
       </div>
     </div>
 

@@ -122,176 +122,123 @@ async function loadSchedule(){
 }
 
 // ============================================================
-// LEADS — con cobro automático Stripe
+// LEADS — automaticos (estilo Thumbtack)
+// El pro escoge servicios, codigos postales y presupuesto semanal.
+// Cuando un cliente pide un servicio en CleanSaver AI, la funcion
+// assign-lead cobra el lead a la tarjeta del pro (max 3 pros) y
+// el cliente le aparece aqui y en Requests.
 // ============================================================
+var LEAD_SERVICES = [
+  ['regular_cleaning','House Cleaning'],['deep_cleaning','Deep Cleaning'],['move_in_out','Move-In/Out Cleaning'],
+  ['commercial_cleaning','Office Cleaning'],['airbnb_cleaning','Airbnb Cleaning'],['carpet_cleaning','Carpet Cleaning'],
+  ['window_cleaning','Window Cleaning'],['handyman_general','Handyman'],['furniture_assembly','Furniture Assembly'],
+  ['tv_mounting','TV Mounting'],['interior_painting','Interior Painting'],['exterior_painting','Exterior Painting'],
+  ['roof_repair','Roof Repair'],['gutter_cleaning','Gutter Cleaning'],['plumbing_repair','Plumbing'],
+  ['drain_cleaning','Drain Cleaning'],['electrical_repair','Electrical'],['ceiling_fan','Ceiling Fan Install'],
+  ['lawn_mowing','Lawn Mowing'],['landscaping','Landscaping'],['ac_repair','AC Repair'],
+  ['pest_treatment','Pest Control'],['moving_local','Local Moving']
+];
+function _esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function _svcName(id){ var f=LEAD_SERVICES.find(function(s){return s[0]===id;}); return f?f[1]:String(id||'').replace(/_/g,' '); }
+function _weekStart(){ var d=new Date(); var day=d.getDay(); var diff=day===0?6:day-1; d.setDate(d.getDate()-diff); d.setHours(0,0,0,0); return d; }
+
 async function loadLeads(){
   try{
-    // Cargar leads de CleanSaver AI
-    var res = await fetch(SB_CS_URL+'/rest/v1/leads?select=*&order=created_at.desc', {
-      headers:{'apikey':SB_CS_KEY,'Authorization':'Bearer '+SB_CS_KEY}
-    });
-    var leads = res.ok ? await res.json() : [];
+    if(!_bizId){ await getBizId(); }
 
-    // Cargar precios de leads
-    var priceRes = await fetch(SB_CS_URL+'/rest/v1/lead_pricing?select=service_type,price', {
-      headers:{'apikey':SB_CS_KEY,'Authorization':'Bearer '+SB_CS_KEY}
-    });
-    var pricing = priceRes.ok ? await priceRes.json() : [];
-    var priceMap = {};
-    pricing.forEach(function(p){ priceMap[p.service_type] = Number(p.price); });
+    // 1. Ajustes del pro + tarjeta
+    var r = await Promise.all([
+      sb.from('pro_lead_settings').select('*').eq('business_id', _bizId||'').maybeSingle(),
+      sb.from('businesses').select('card_last4,card_brand,stripe_payment_method_id').eq('id', _bizId||'').maybeSingle(),
+      sb.from('lead_claims').select('*').eq('business_id', _bizId||'').order('claimed_at',{ascending:false}),
+      sb.from('pro_requests').select('*').ilike('notes','Lead de CleanSaver AI%').order('created_at',{ascending:false})
+    ]);
+    var st = r[0].data || { leads_enabled:false, services:[], zips:[], weekly_budget:0 };
+    var biz = r[1].data || {};
+    var claims = r[2].data || [];
+    var reqs = r[3].data || [];
 
-    // Cargar claims del pro actual para saber cuáles ya reclamó
-    var claimsRes = await sb.from('lead_claims').select('lead_id,status').eq('business_id', _bizId||'');
-    var claims = claimsRes.data||[];
-    var claimedMap = {};
-    claims.forEach(function(c){ claimedMap[c.lead_id] = c.status; });
+    // Formulario
+    var on = document.getElementById('ls-enabled'); if(on) on.checked = !!st.leads_enabled;
+    var box = document.getElementById('ls-services');
+    if(box){
+      box.innerHTML = LEAD_SERVICES.map(function(s){
+        var chk = (st.services||[]).indexOf(s[0])>=0 ? ' checked' : '';
+        return '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 0;"><input type="checkbox" class="ls-svc" value="'+s[0]+'"'+chk+'> '+s[1]+'</label>';
+      }).join('');
+    }
+    var z = document.getElementById('ls-zips'); if(z) z.value = (st.zips||[]).join(', ');
+    var b = document.getElementById('ls-budget'); if(b) b.value = Number(st.weekly_budget||0) || '';
+    var card = document.getElementById('ls-card');
+    if(card){
+      card.innerHTML = biz.stripe_payment_method_id
+        ? '💳 Leads are charged to your '+_esc((biz.card_brand||'card').toUpperCase())+' ending in '+_esc(biz.card_last4||'----')+'.'
+        : '⚠️ <b>Add a card in Settings → Payment Method</b> to start receiving leads.';
+      card.style.color = biz.stripe_payment_method_id ? 'var(--tx2)' : '#B45309';
+    }
 
-    // KPIs
-    try{ document.getElementById('leads-new').textContent = leads.filter(function(l){ return l.status==='new'||l.status==='pending'; }).length; }catch(e){}
-    try{ document.getElementById('leads-accepted').textContent = leads.filter(function(l){ return l.status==='accepted'||l.status==='claimed'; }).length; }catch(e){}
-    try{ document.getElementById('leads-converted').textContent = leads.filter(function(l){ return l.status==='converted'; }).length; }catch(e){}
+    // 2. KPIs de la semana
+    var ws = _weekStart();
+    var paidWeek = claims.filter(function(c){ return c.status==='paid' && new Date(c.claimed_at)>=ws && c.refund_status!=='approved'; });
+    var spent = paidWeek.reduce(function(a,c){ return a+Number(c.lead_price||0); },0);
+    try{ document.getElementById('leads-new').textContent = paidWeek.length; }catch(e){}
+    try{ document.getElementById('leads-accepted').textContent = '$'+spent.toFixed(0); }catch(e){}
+    try{ document.getElementById('leads-converted').textContent = '$'+Number(st.weekly_budget||0).toFixed(0); }catch(e){}
 
-    var html = leads.length ? leads.map(function(l){
-      var lid = l.id;
-      var lstat = l.status||'new';
-      var svcType = l.service||'';
-      var leadPrice = Number(priceMap[svcType]) || 20;
-      var alreadyClaimed = claimedMap[lid];
-
-      var actionBtn = '';
-      var waPhone = (l.phone||'').replace(/\D/g,'');
-      var waMsg = encodeURIComponent('Hola '+(l.name||'')+', soy profesional de CleanSaver AI. Vi tu solicitud de '+svcType+'. Me gustaria darte una cotizacion!');
-      var waBtn = '<a href="https://wa.me/1'+waPhone+'?text='+waMsg+'" target="_blank" class="btn btn-xs" style="background:#25D366;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:3px;">💬 WhatsApp</a>';
-      if(alreadyClaimed === 'paid' || lstat==='claimed'){
-        // Lead cobrado — mostrar contacto + WhatsApp
-        actionBtn = '<div style="line-height:1.6;">'
-          +'<div style="font-size:11px;font-weight:600;">'+(l.name||'--')+'</div>'
-          +'<div style="font-size:10px;color:var(--tx3);">'+(l.phone||'')+'</div>'
-          +'<div style="font-size:10px;color:var(--tx3);">'+(l.email||'')+'</div>'
-          +'<div style="margin-top:4px;">'+waBtn+'</div>'
-          +'</div>';
-      } else if(alreadyClaimed === 'pending'){
-        actionBtn = '<span class="badge b-progress">Processing...</span>';
-      } else if(lstat==='new'||lstat==='pending'){
-        actionBtn = '<button onclick="claimLead(\''+lid+'\',\''+svcType+'\','+leadPrice+')" class="btn btn-success btn-xs" style="background:linear-gradient(135deg,#10B981,#059669);">'
-          +'💳 Claim — $'+Number(leadPrice).toFixed(0)
-          +'</button>';
-      } else {
-        actionBtn = '<span class="badge b-cancelled">'+lstat+'</span>';
-      }
-
-      var delBtn = '<button onclick="deleteLead(\''+lid+'\')" class="btn btn-outline btn-xs" style="color:var(--red);border-color:var(--red);margin-left:4px;">Del</button>';
-
-      var svcLabel = svcType.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+    // 3. Leads recibidos (los datos del cliente vienen en Requests)
+    var paid = claims.filter(function(c){ return c.status==='paid'; });
+    var html = paid.length ? paid.map(function(c, i){
+      var rq = reqs.find(function(q){ return q.service===c.service_type && Math.abs(new Date(q.created_at)-new Date(c.claimed_at)) < 5*60*1000; }) || {};
+      var details = String(rq.notes||'').replace(/^Lead de CleanSaver AI — \$[\d.]+ cobrado\.\s*/,'');
+      var phone = (details.match(/Tel: ([^|]+)/)||[])[1]||'';
+      var digits = phone.replace(/\D/g,'').slice(-10);
+      var contact = digits ? '<a class="btn btn-xs" style="background:#25D366;color:#fff;text-decoration:none;" target="_blank" href="https://wa.me/1'+digits+'">WhatsApp</a> <a class="btn btn-outline btn-xs" href="tel:'+digits+'">Call</a>' : '';
+      var refund;
+      if(c.refund_status==='requested') refund = '<span class="badge b-progress">Refund requested</span>';
+      else if(c.refund_status==='approved') refund = '<span class="badge b-paid">Refunded</span>';
+      else if(c.refund_status==='denied') refund = '<span class="badge b-cancelled">Refund denied</span>';
+      else refund = '<button class="btn btn-outline btn-xs" onclick="reportLead(\''+c.id+'\')">Report bad lead</button>';
       return '<tr>'
-        +'<td><b>'+(l.name||'--')+'</b><br><span style="font-size:11px;color:var(--tx3);">'+(l.address||'')+'</span></td>'
-        +'<td>'+svcLabel+'</td>'
-        +'<td>'+(l.city||l.address||'--')+'</td>'
-        +'<td>'+fmtD(l.preferred_date||l.created_at)+'</td>'
-        +'<td>'+(l.budget?'$'+l.budget:'--')+'</td>'
-        +'<td><b style="color:var(--purple);">$'+leadPrice+'</b></td>'
-        +'<td>'+bdg(lstat)+'</td>'
-        +'<td style="white-space:nowrap;">'+actionBtn+delBtn+'</td>'
+        +'<td>'+fmtD(c.claimed_at)+'</td>'
+        +'<td><b>'+_esc(rq.client_name||'—')+'</b><br><span style="font-size:11px;color:var(--tx3);">'+_esc(rq.address||'')+'</span></td>'
+        +'<td>'+_esc(_svcName(c.service_type))+'</td>'
+        +'<td style="font-size:11.5px;max-width:260px;">'+_esc(details)+'<div style="margin-top:4px;">'+contact+'</div></td>'
+        +'<td><b style="color:var(--purple);">$'+Number(c.lead_price||0).toFixed(0)+'</b></td>'
+        +'<td>'+refund+'</td>'
         +'</tr>';
-    }).join('') : '<tr><td colspan="7" class="empty">No leads yet — they appear here when clients request services on CleanSaver AI</td></tr>';
-
+    }).join('') : '<tr><td colspan="6" class="empty">No leads yet. Turn on leads above, pick your services and ZIP codes, and new client requests from CleanSaver AI will arrive here automatically.</td></tr>';
     try{ document.getElementById('leads-table').innerHTML = html; }catch(e){}
   }catch(err){ console.error('loadLeads error:',err); }
 }
 
-// ---- Reclamar un lead con cobro automático ----
-async function claimLead(leadId, serviceType, leadPrice){
-  // Verificar que tiene tarjeta
+async function saveLeadSettings(){
   if(!_bizId){ await getBizId(); }
-
-  var bizRes = await sb.from('businesses').select('stripe_payment_method_id,card_last4,card_brand').eq('id',_bizId).single();
-  var biz = bizRes.data||{};
-
-  if(!biz.stripe_payment_method_id){
-    showConfirm(
-      '⚠️ No tienes una tarjeta guardada. ¿Quieres ir a Settings para agregar una?',
-      function(){ nav('settings', document.querySelector('.ni:last-child')); },
-      function(){}
-    );
+  var services = Array.from(document.querySelectorAll('.ls-svc:checked')).map(function(x){ return x.value; });
+  var zips = (document.getElementById('ls-zips').value||'').split(/[\s,]+/).map(function(z){ return z.trim(); }).filter(function(z){ return /^\d{5}$/.test(z); });
+  var budget = Math.max(0, Number(document.getElementById('ls-budget').value||0));
+  var enabled = document.getElementById('ls-enabled').checked;
+  if(enabled && (!services.length || !zips.length || budget < 15)){
+    showAlert('To receive leads, pick at least one service, one 5-digit ZIP code, and a weekly budget of at least $15.');
     return;
   }
-
-  var brand = (biz.card_brand||'card').toUpperCase();
-  var last4 = biz.card_last4||'----';
-
-  showConfirm(
-    '💳 Se cobrará $'+leadPrice+' a tu '+brand+' terminada en '+last4+'.\n\nUna vez que pagues verás el nombre, teléfono y email del cliente.\n\n¿Confirmas el cobro?',
-    async function(){
-      // Mostrar loading en el botón
-      try{
-        var btns = document.querySelectorAll('#leads-table button');
-        btns.forEach(function(b){ if(b.textContent.includes('Claim')) b.textContent = 'Processing...'; b.disabled = true; });
-      }catch(e){}
-
-      try{
-        var res = await fetch(SB_CS_URL+'/functions/v1/claim-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lead_id: leadId, business_id: _bizId })
-        });
-        var data = await res.json();
-
-        if(data.success){
-          showAlert(
-            '✅ Lead reclamado exitosamente!\n\n'
-            +'👤 Cliente: '+data.client.name+'\n'
-            +'📞 Teléfono: '+data.client.phone+'\n'
-            +'📧 Email: '+(data.client.email||'N/A')+'\n'
-            +'📍 Dirección: '+data.client.address+'\n\n'
-            +'💰 Cobrado: $'+data.charged+'\n\n'
-            +'El cliente fue agregado a tus Requests en CleanPro TX.'
-          );
-          loadLeads();
-          loadSchedule();
-        } else if(data.code === 'NO_PAYMENT_METHOD'){
-          showAlert('No tienes tarjeta guardada. Ve a Settings → Payment Method para agregar una.');
-        } else if(data.code === 'PAYMENT_FAILED'){
-          showAlert('❌ El cobro falló: '+(data.stripe_error||'Error desconocido')+'\n\nVerifica tu tarjeta en Settings.');
-        } else {
-          showAlert('Error: '+(data.error||'Intenta de nuevo'));
-          loadLeads();
-        }
-      }catch(err){
-        showAlert('Error de conexión: '+err.message);
-        loadLeads();
-      }
-    },
-    function(){ loadLeads(); }
-  );
-}
-
-// ---- Ver contacto de lead ya reclamado ----
-async function viewLeadContact(leadId){
-  try{
-    var res = await fetch(SB_CS_URL+'/rest/v1/leads?id=eq.'+leadId+'&select=name,phone,email,address,service', {
-      headers:{'apikey':SB_CS_KEY,'Authorization':'Bearer '+SB_CS_KEY}
-    });
-    var data = await res.json();
-    var l = data[0]||{};
-    showAlert(
-      '👤 '+l.name+'\n'
-      +'📞 '+(l.phone||'N/A')+'\n'
-      +'📧 '+(l.email||'N/A')+'\n'
-      +'📍 '+(l.address||'N/A')+'\n'
-      +'🔧 '+(l.service||'N/A')
-    );
-  }catch(e){
-    showAlert('Error al cargar el contacto');
-  }
-}
-
-async function declineLead(id){
-  await fetch(SB_CS_URL+'/rest/v1/leads?id=eq.'+id, {
-    method:'PATCH',
-    headers:{'apikey':SB_CS_KEY,'Authorization':'Bearer '+SB_CS_KEY,'Content-Type':'application/json'},
-    body:JSON.stringify({status:'declined'})
-  });
+  var row = { business_id:_bizId, leads_enabled:enabled, services:services, zips:zips, weekly_budget:budget, updated_at:new Date().toISOString() };
+  var ex = await sb.from('pro_lead_settings').select('business_id').eq('business_id',_bizId).maybeSingle();
+  var res = ex.data
+    ? await sb.from('pro_lead_settings').update(row).eq('business_id',_bizId)
+    : await sb.from('pro_lead_settings').insert(row);
+  if(res.error){ showAlert('Could not save: '+res.error.message); return; }
+  showAlert(enabled ? '✅ Saved. You will receive matching leads automatically.' : 'Saved. Leads are turned off.');
   loadLeads();
+}
+
+function reportLead(claimId){
+  var reason = prompt('What was wrong with this lead? (spam, wrong or fake phone number, duplicate...)\nYou can report a lead within 7 days.');
+  if(reason===null) return;
+  sb.rpc('request_lead_refund', { p_claim_id: claimId, p_reason: reason }).then(function(r){
+    var msg = { ok:'Thanks. We will review it and refund your card if the lead was bad.', too_late:'This lead is older than 7 days and can no longer be reported.', already_requested:'You already reported this lead.' };
+    showAlert(r.error ? ('Error: '+r.error.message) : (msg[r.data] || 'Could not report this lead.'));
+    loadLeads();
+  });
 }
 
 // ---- CLIENTS ----
