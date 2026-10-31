@@ -493,7 +493,7 @@ tbody tr:hover td{background:#FAFBFF;}
       <div class="card" style="margin-bottom:14px;">
         <div class="card-header"><div class="card-title">Get leads from CleanSaver AI</div></div>
         <div style="padding:4px 18px 18px;font-size:13px;line-height:1.6;color:var(--tx2);">
-          <p style="margin:0 0 10px;">When a homeowner requests a service in your area, the lead is sent to you automatically and charged to your card. Leads start at <b>$15</b> (most are about $20). Each lead goes to <b>3 pros at most</b>. You never spend more than your weekly budget. Spam or a fake phone number? Report it within 7 days and we refund you.</p>
+          <p style="margin:0 0 10px;">When a homeowner requests a service in your area, the lead is sent to you automatically and charged to your card. <b>Lead prices change with each job</b>, like on other lead sites: bigger jobs, urgent jobs (within 48 hours) and areas with more pros cost more; small jobs and areas with few pros cost less. The usual range for each service is shown next to it. Each lead goes to <b>3 pros at most</b>, and you never pay more than your max price per lead or your weekly budget. Spam or a fake phone number? Report it within 7 days and we refund you.</p>
           <div id="ls-card" style="margin-bottom:12px;"></div>
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:12px;"><input type="checkbox" id="ls-enabled"> Receive leads</label>
           <div style="font-weight:600;margin-bottom:4px;">Services you offer</div>
@@ -501,6 +501,7 @@ tbody tr:hover td{background:#FAFBFF;}
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px;">
             <label>ZIP codes you serve<br><input id="ls-zips" class="search-input" style="width:100%;" placeholder="79410, 79412, 79414"></label>
             <label>Weekly budget ($)<br><input id="ls-budget" class="search-input" style="width:100%;" type="number" min="0" step="5" placeholder="100"></label>
+            <label>Max price per lead ($)<br><input id="ls-max" class="search-input" style="width:100%;" type="number" min="0" step="1" placeholder="No limit"></label>
           </div>
           <button class="btn btn-primary btn-sm" onclick="saveLeadSettings()">Save lead settings</button>
         </div>

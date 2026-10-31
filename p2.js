@@ -151,9 +151,12 @@ async function loadLeads(){
       sb.from('pro_lead_settings').select('*').eq('business_id', _bizId||'').maybeSingle(),
       sb.from('businesses').select('card_last4,card_brand,stripe_payment_method_id').eq('id', _bizId||'').maybeSingle(),
       sb.from('lead_claims').select('*').eq('business_id', _bizId||'').order('claimed_at',{ascending:false}),
-      sb.from('pro_requests').select('*').ilike('notes','Lead de CleanSaver AI%').order('created_at',{ascending:false})
+      sb.from('pro_requests').select('*').ilike('notes','Lead de CleanSaver AI%').order('created_at',{ascending:false}),
+      sb.from('lead_pricing').select('service_type,price').eq('is_active',true)
     ]);
-    var st = r[0].data || { leads_enabled:false, services:[], zips:[], weekly_budget:0 };
+    var basePrice = {};
+    (r[4].data||[]).forEach(function(p){ basePrice[p.service_type] = Number(p.price); });
+    var st = r[0].data || { leads_enabled:false, services:[], zips:[], weekly_budget:0, max_lead_price:0 };
     var biz = r[1].data || {};
     var claims = r[2].data || [];
     var reqs = r[3].data || [];
@@ -164,11 +167,15 @@ async function loadLeads(){
     if(box){
       box.innerHTML = LEAD_SERVICES.map(function(s){
         var chk = (st.services||[]).indexOf(s[0])>=0 ? ' checked' : '';
-        return '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 0;"><input type="checkbox" class="ls-svc" value="'+s[0]+'"'+chk+'> '+s[1]+'</label>';
+        var b = basePrice[s[0]] || 25;
+        var lo = Math.max(10, Math.round(b*0.75*0.85)), hi = Math.min(150, Math.round(b*1.35*1.15*1.1));
+        return '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 0;"><input type="checkbox" class="ls-svc" value="'+s[0]+'"'+chk+'> '+s[1]
+          +' <span style="color:var(--tx3);font-size:11px;">$'+lo+'–$'+hi+'</span></label>';
       }).join('');
     }
     var z = document.getElementById('ls-zips'); if(z) z.value = (st.zips||[]).join(', ');
     var b = document.getElementById('ls-budget'); if(b) b.value = Number(st.weekly_budget||0) || '';
+    var mx = document.getElementById('ls-max'); if(mx) mx.value = Number(st.max_lead_price||0) || '';
     var card = document.getElementById('ls-card');
     if(card){
       card.innerHTML = biz.stripe_payment_method_id
@@ -217,11 +224,16 @@ async function saveLeadSettings(){
   var zips = (document.getElementById('ls-zips').value||'').split(/[\s,]+/).map(function(z){ return z.trim(); }).filter(function(z){ return /^\d{5}$/.test(z); });
   var budget = Math.max(0, Number(document.getElementById('ls-budget').value||0));
   var enabled = document.getElementById('ls-enabled').checked;
+  var maxPrice = Math.max(0, Number((document.getElementById('ls-max')||{}).value||0));
   if(enabled && (!services.length || !zips.length || budget < 15)){
     showAlert('To receive leads, pick at least one service, one 5-digit ZIP code, and a weekly budget of at least $15.');
     return;
   }
-  var row = { business_id:_bizId, leads_enabled:enabled, services:services, zips:zips, weekly_budget:budget, updated_at:new Date().toISOString() };
+  if(enabled && maxPrice > 0 && maxPrice < 10){
+    showAlert('The lowest lead price is $10. Set your max price per lead to $10 or more, or leave it empty for no limit.');
+    return;
+  }
+  var row = { business_id:_bizId, leads_enabled:enabled, services:services, zips:zips, weekly_budget:budget, max_lead_price:maxPrice, updated_at:new Date().toISOString() };
   var ex = await sb.from('pro_lead_settings').select('business_id').eq('business_id',_bizId).maybeSingle();
   var res = ex.data
     ? await sb.from('pro_lead_settings').update(row).eq('business_id',_bizId)
