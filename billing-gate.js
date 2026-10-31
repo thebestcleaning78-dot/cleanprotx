@@ -9,8 +9,10 @@
 (function () {
   var SUPABASE_URL = 'https://yfqoncqoerleoaqxvaie.supabase.co';
   var FN = SUPABASE_URL + '/functions/v1/billing';
-  // login.html inicia sesion en yfqon; p1.js usa kpah. Se prueban los dos.
-  var STORAGE_KEYS = ['sb-yfqoncqoerleoaqxvaie-auth-token', 'sb-kpahdvgwpeyggilujzsd-auth-token'];
+  // CleanPro inicia sesion solo en yfqon. La sesion vieja de kpah se borra
+  // (era de una version anterior y hacia que no se encontrara el negocio).
+  var STORAGE_KEYS = ['sb-yfqoncqoerleoaqxvaie-auth-token'];
+  try { localStorage.removeItem('sb-kpahdvgwpeyggilujzsd-auth-token'); } catch (e) {}
   var PLANS = [
     { id: 'Basic', price: 29 },
     { id: 'Pro', price: 59, popular: true },
@@ -161,6 +163,9 @@
       if (st.noSession) {
         if (attempt < 3) return setTimeout(function () { check(attempt + 1); }, 1000);
         return showError('Your session was not found. Please sign out and sign in again.');
+      }
+      if (st.reason === 'no_business') {
+        return showError('This login has no CleanPro business. Sign out and sign in with the email you registered with.');
       }
       if (st.allowed) {
         close();
