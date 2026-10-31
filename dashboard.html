@@ -964,7 +964,7 @@ async function initStripeCard() {
 
     var res = await fetch(SUPABASE_URL + '/functions/v1/save-payment-method', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _authHeaders(),
       body: JSON.stringify({ business_id: bizId, action: 'create_setup_intent' })
     });
     var data = await res.json();
@@ -976,6 +976,13 @@ async function initStripeCard() {
   } catch(e) {
     console.error('Stripe init error:', e);
   }
+}
+
+// Encabezados con la sesion del pro (la funcion de tarjeta la exige)
+async function _authHeaders() {
+  var h = { 'Content-Type': 'application/json' };
+  try { var r = await sb.auth.getSession(); var t = r && r.data && r.data.session && r.data.session.access_token; if (t) h['Authorization'] = 'Bearer ' + t; } catch (e) {}
+  return h;
 }
 
 // Guardar tarjeta
@@ -1009,7 +1016,7 @@ async function saveCard() {
     // Cobro confirmado — guardar en Supabase
     var res = await fetch(SUPABASE_URL + '/functions/v1/save-payment-method', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await _authHeaders(),
       body: JSON.stringify({
         business_id: _bizId,
         action: 'save_payment_method',
