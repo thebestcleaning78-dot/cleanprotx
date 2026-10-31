@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>/* Enlace de "olvide mi contraseña": mandarlo a la pagina correcta */if(location.hash.indexOf("type=recovery")>-1&&location.pathname.indexOf("reset-password")<0){location.replace("/reset-password.html"+location.search+location.hash);}</script>
+<script>/* Enlace de "olvide mi contraseña": mandarlo a la pagina correcta */if((location.hash.indexOf("type=recovery")>-1||location.hash.indexOf("error_code=otp_expired")>-1)&&location.pathname.indexOf("reset-password")<0){location.replace("/reset-password.html"+location.search+location.hash);}</script>
 
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
 <title>CleanPro TX — Sign In</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -153,6 +153,11 @@ footer{
   border-top:1px solid var(--border);
   position:relative;z-index:1;
 }
+</style>
+<style id="mobile-fix">
+/* Celular: sin moverse de lado, sin rebote y sin zoom al escribir */
+html,body{overflow-x:clip;overscroll-behavior:none;max-width:100%;}
+@media (max-width:900px){input,select,textarea{font-size:16px !important;}}
 </style>
 </head>
 <body>

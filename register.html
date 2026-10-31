@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
 <title>CleanPro TX — Sign Up</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -46,6 +46,11 @@ select option{background:#0F1A2E;}
 .ok h2{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;}
 .ok p{font-size:14px;color:rgba(255,255,255,0.45);}
 .ok .note{color:var(--teal);margin-top:16px;font-size:13px;}
+</style>
+<style id="mobile-fix">
+/* Celular: sin moverse de lado, sin rebote y sin zoom al escribir */
+html,body{overflow-x:clip;overscroll-behavior:none;max-width:100%;}
+@media (max-width:900px){input,select,textarea{font-size:16px !important;}}
 </style>
 </head>
 <body>

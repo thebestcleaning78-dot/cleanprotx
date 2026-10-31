@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
 <title>CleanPro TX — Plans</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -40,6 +40,11 @@ h1{font-family:'Sora',sans-serif;font-size:32px;font-weight:800;color:var(--whit
 .msg{text-align:center;margin-top:20px;font-size:13px;color:var(--teal);min-height:20px;}
 .trial{font-size:12px;color:var(--tx3);margin-top:8px;}
 @media(max-width:640px){.plans{grid-template-columns:1fr;}}
+</style>
+<style id="mobile-fix">
+/* Celular: sin moverse de lado, sin rebote y sin zoom al escribir */
+html,body{overflow-x:clip;overscroll-behavior:none;max-width:100%;}
+@media (max-width:900px){input,select,textarea{font-size:16px !important;}}
 </style>
 </head>
 <body>
