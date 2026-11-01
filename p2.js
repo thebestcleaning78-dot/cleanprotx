@@ -75,7 +75,7 @@ async function loadSchedule(){
           : 'onclick="nav(\''+ba+'\',null)"';
         return '<div class="pipe-card">'
           +'<div class="pipe-name" style="color:'+col+';">'+(i.client_name||i.name||'--')+'</div>'
-          +'<div class="pipe-svc">'+(i.service||'--')+'</div>'
+          +'<div class="pipe-svc">'+_esc(_svcName(i.service)||'--')+'</div>'
           +(i.amount?'<div class="pipe-amt" style="color:'+col+';">'+fmt(i.amount)+'</div>':'')
           +'<div class="pipe-date">'+fmtD(i.scheduled_date||i.preferred_date||i.created_at)+'</div>'
           +'<button '+act+' class="pipe-action" style="background:'+bc+';color:#fff;">'+bl+'</button>'
