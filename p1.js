@@ -114,7 +114,7 @@ function nav(id, el){
     invoices:'Invoices', payments:'Payments', expenses:'Expenses',
     accounting:'Reports', acct:'Accounting', gallery:'Gallery',
     timesheets:'Timesheets', apps:'Apps', marketing:'Marketing',
-    settings:'Settings'
+    settings:'Settings', finance:'Business Finance'
   };
   try{ document.getElementById('ptitle').textContent = titles[id] || id; }catch(e){}
   loadSec(id);
@@ -136,6 +136,7 @@ function loadSec(id){
   else if(id==='marketing')  {}
   else if(id==='settings')   getBizId().then(function(){ loadSettings(); });
   else if(id==='gallery')    loadGallery();
+  else if(id==='finance')    loadFinance();
   else if(id==='timesheets') getBizId().then(function(){ loadTimesheets(); });
 }
 
