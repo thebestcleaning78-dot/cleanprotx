@@ -532,7 +532,8 @@ async function completeAndInvoice(jobId){
     await sb.from('pro_jobs').update({status:'Completed'}).eq('id',jobId);
     _jobs = _jobs.map(function(j){ return j.id===jobId?Object.assign({},j,{status:'Completed'}):j; });
     loadJobs();
-    await createInvoiceFromJob(jobId, job);
+    // El servidor crea y manda la factura sola; aqui solo esperamos y avisamos
+    await autoCreateInvoice(jobId, job.client_name, job.service, Number(job.amount||0));
   }, function(){});
 }
 
@@ -667,6 +668,7 @@ async function loadSettings(){
     try{ document.getElementById('s-paynote').value = biz.payment_note||''; }catch(e){}
     try{ document.getElementById('s-terms').value = biz.default_terms_days!=null ? biz.default_terms_days : ''; }catch(e){}
     try{ document.getElementById('s-deposit').value = biz.deposit_percent!=null ? biz.deposit_percent : ''; }catch(e){}
+    try{ document.getElementById('s-reminders').checked = biz.auto_reminders!==false; }catch(e){}
     try{ document.getElementById('s-plan-name').textContent = (biz.plan||'Basic')+' Plan'; }catch(e){}
     try{ document.getElementById('s-plan-status').textContent = biz.status||'Active'; }catch(e){}
     var user = await sb.auth.getUser();

@@ -168,20 +168,9 @@ async function saveModal(){
       if(freq && freq!=='One-time'){
         setTimeout(async function(){ await autoScheduleJobs(cname,cphone,g('f-address'),freq,startDate,startTime,price); }, 800);
       }
-      // Mensaje de bienvenida por WhatsApp al cliente nuevo
-      if(cphone){
-        setTimeout(async function(){
-          var cleanPhone = cphone.replace(/\D/g,'').slice(-10);
-          var firstDate = startDate ? new Date(startDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) : '';
-          var msg = 'Hi '+cname+'! 🏠✨\n\nThank you for choosing '+bizName()+'! We are excited to work with you.\n\n'
-            +(firstDate?'📅 Your first appointment is scheduled for '+firstDate+(startTime?' at '+fmtT(startTime):'')+'\n\n':'')
-            +'If you have any questions, call or text us anytime:\n📞 '+bizPhone()+'\n\nWe look forward to making your home sparkle! — '+ownerFirst()+'\n'+bizName();
-          try{
-            await sb.functions.invoke('smooth-responder',{body:{to:cleanPhone,custom_message:msg}});
-            console.log('Welcome WhatsApp sent to '+cname);
-          }catch(e){ console.log('Welcome msg error:',e.message); }
-        }, 2000);
-      }
+      // (El mensaje de bienvenida automatico se quito: CleanPro no tiene
+      //  servicio de SMS propio para cada pro. Se manda desde el telefono
+      //  del pro con el boton de texto del trabajo.)
     }
     else if(_curM==='job'){
       var recur=g('f-recur')||'none';
@@ -826,21 +815,16 @@ function doSMS(jobId){
   document.getElementById('sms-result').textContent = '';
   document.getElementById('sms-modal-bg').classList.add('open');
 }
-async function confirmSMS(){
+function confirmSMS(){
   var phone = document.getElementById('sms-phone').value.trim();
-  if(!phone){ showAlert('Please enter the client phone number.'); return; }
-  var btn=document.getElementById('sms-btn'); btn.textContent='Sending...'; btn.disabled=true;
-  try{
-    var res=await sb.functions.invoke('smooth-responder',{body:{to:phone,client_name:_smsJob.client_name||'',service:_smsJob.service||'',scheduled_date:_smsJob.scheduled_date||'',custom_message:document.getElementById('sms-preview').textContent}});
-    if(res.error) throw res.error;
-    document.getElementById('sms-result').style.color='var(--green)';
-    document.getElementById('sms-result').textContent='SMS sent!';
-    setTimeout(function(){ document.getElementById('sms-modal-bg').classList.remove('open'); },2000);
-  }catch(err){
-    document.getElementById('sms-result').style.color='var(--red)';
-    document.getElementById('sms-result').textContent='Error: '+err.message;
-  }
-  btn.textContent='Send SMS'; btn.disabled=false;
+  var d = phone.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+  if(d.length!==10){ showAlert('Please enter a valid 10-digit phone number.'); return; }
+  var msg = document.getElementById('sms-preview').textContent;
+  // Abre la app de mensajes del telefono del pro con el texto listo
+  window.location.href = 'sms:+1'+d+(/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(msg);
+  document.getElementById('sms-result').style.color='var(--green)';
+  document.getElementById('sms-result').textContent='Opening your messages app...';
+  setTimeout(function(){ document.getElementById('sms-modal-bg').classList.remove('open'); },2000);
 }
 
 // ---- PHOTOS ----
@@ -979,7 +963,8 @@ async function saveSettings(){
       zelle_info: gv('s-zelle').trim() || null,
       payment_note: gv('s-paynote').trim() || null,
       default_terms_days: gv('s-terms')==='' ? null : Math.max(0, Math.min(60, parseInt(gv('s-terms'),10)||0)),
-      deposit_percent: gv('s-deposit')==='' ? null : Math.max(0, Math.min(100, parseFloat(gv('s-deposit'))||0))
+      deposit_percent: gv('s-deposit')==='' ? null : Math.max(0, Math.min(100, parseFloat(gv('s-deposit'))||0)),
+      auto_reminders: !!(document.getElementById('s-reminders')||{}).checked
     }).eq('id', bid);
     if(!res.error){ var bz=(await sb.from('businesses').select('*').eq('id',bid).maybeSingle()).data; if(bz) window._biz=bz; }
     if(res.error) throw res.error;
@@ -1130,14 +1115,42 @@ function quickJob(clientId){
 
 
 // ---- AUTO CREATE INVOICE WHEN JOB COMPLETED (like Jobber) ----
-// Crea la factura del trabajo (una sola por trabajo), descuenta depositos
-// pagados del cliente y, si tiene email, se la manda sola.
+// El servidor crea la factura sola cuando el trabajo pasa a Completed
+// (descuenta el deposito pagado y la manda por correo si el cliente tiene email).
+// Aqui solo esperamos a que aparezca y le avisamos al pro. Si el servidor no
+// responde, la creamos desde aqui como respaldo (nunca se duplica: 1 por trabajo).
 async function autoCreateInvoice(jobId, clientName, service, amount){
   try{
-    var bid = await getBizId();
-    var ex = await sb.from('pro_invoices').select('id,invoice_number').eq('job_id',jobId).limit(1);
-    if(ex.data && ex.data.length){ showAlert('Job completed! Invoice #'+String(ex.data[0].invoice_number||0).padStart(3,'0')+' already exists for this job.'); return; }
     if(!(amount>0)){ showAlert('Job completed! Add an amount to the job to create its invoice.'); return; }
+    var inv=null;
+    for(var t=0;t<10 && !inv;t++){
+      await new Promise(function(r){ setTimeout(r, 1500); });
+      var r=await sb.from('pro_invoices').select('id,invoice_number,balance,status,client_email').eq('job_id',jobId).or('is_deposit.is.null,is_deposit.eq.false').limit(1);
+      if(r.data && r.data.length) inv=r.data[0];
+    }
+    if(!inv){ await autoCreateInvoiceLocal(jobId, clientName, service, amount); return; }
+    // Si todavia esta en Draft, el correo puede venir en camino: esperar un poco mas
+    for(var u=0;u<4 && inv.status==='Draft' && inv.client_email;u++){
+      await new Promise(function(r){ setTimeout(r, 1500); });
+      var r2=await sb.from('pro_invoices').select('id,invoice_number,balance,status,client_email').eq('id',inv.id).single();
+      if(r2.data) inv=r2.data;
+    }
+    var n=String(inv.invoice_number||0).padStart(3,'0'), bal=Number(inv.balance||0);
+    if(inv.status==='Paid') showAlert('Job completed! The deposit covered the full price.');
+    else if(inv.status!=='Draft' && inv.client_email) showAlert('Job completed! Invoice #'+n+' for $'+bal.toFixed(2)+' was emailed to '+inv.client_email+' 🎉');
+    else showAlert('Job completed! Invoice #'+n+' created for $'+bal.toFixed(2)+'. Open it in Invoices and send it by text.');
+    loadInvoices();
+  }catch(err){
+    console.error('Auto invoice error:',err);
+    showAlert('Job completed! Could not check the invoice: '+err.message);
+  }
+}
+
+async function autoCreateInvoiceLocal(jobId, clientName, service, amount){
+  try{
+    var bid = await getBizId();
+    var ex = await sb.from('pro_invoices').select('id,invoice_number').eq('job_id',jobId).or('is_deposit.is.null,is_deposit.eq.false').limit(1);
+    if(ex.data && ex.data.length){ showAlert('Job completed! Invoice #'+String(ex.data[0].invoice_number||0).padStart(3,'0')+' already exists for this job.'); return; }
 
     var cliRes = await sb.from('pro_clients').select('id,email,phone,payment_terms').ilike('name',clientName).limit(1);
     var cli = cliRes.data&&cliRes.data.length ? cliRes.data[0] : {};
@@ -1145,7 +1158,7 @@ async function autoCreateInvoice(jobId, clientName, service, amount){
     var due = new Date(); due.setDate(due.getDate()+terms);
 
     // Depositos pagados que todavia no se han descontado
-    var dRes = await sb.from('pro_invoices').select('id,amount,invoice_number').eq('is_deposit',true).eq('status','Paid').is('deposit_applied_invoice_id',null).ilike('client_name',clientName);
+    var dRes = await sb.from('pro_invoices').select('id,amount,invoice_number,job_id').eq('is_deposit',true).eq('status','Paid').is('deposit_applied_invoice_id',null).ilike('client_name',clientName);
     var depTotal=0, depUse=[];
     (dRes.data||[]).forEach(function(d){ if(depTotal<amount){ depTotal+=Number(d.amount||0); depUse.push(d); } });
     depTotal=Math.min(depTotal,amount);
@@ -1161,7 +1174,10 @@ async function autoCreateInvoice(jobId, clientName, service, amount){
       notes: depTotal>0 ? 'Total $'+Number(amount).toFixed(2)+' minus deposit paid $'+depTotal.toFixed(2)+'.' : '',
       job_id: jobId, business_id: bid, client_email: cli.email||null, client_phone: cli.phone||null
     }]).select().single();
-    if(invRes.error) throw invRes.error;
+    if(invRes.error){
+      if(String(invRes.error.message||'').indexOf('one_per_job')>=0){ showAlert('Job completed! Its invoice was already created — see Invoices.'); loadInvoices(); return; }
+      throw invRes.error;
+    }
     var newInv = invRes.data;
     if(depUse.length) await sb.from('pro_invoices').update({deposit_applied_invoice_id:newInv.id}).in('id',depUse.map(function(d){return d.id;}));
     var n = String(invN).padStart(3,'0');

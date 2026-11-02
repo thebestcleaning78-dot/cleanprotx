@@ -765,8 +765,13 @@ html,body{overflow-x:clip;overscroll-behavior:none;max-width:100%;}
             <div class="form-group"><label class="form-label">Note on invoices (optional)</label><input class="form-input" id="s-paynote" placeholder="e.g. Checks payable to My Cleaning LLC"/></div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">Days to pay (default)</label><input class="form-input" id="s-terms" type="number" min="0" max="60" placeholder="2"/></div>
-              <div class="form-group"><label class="form-label">Deposit for new bookings (%)</label><input class="form-input" id="s-deposit" type="number" min="0" max="100" placeholder="30"/></div>
+              <div class="form-group"><label class="form-label">Deposit for new clients (%)</label><input class="form-input" id="s-deposit" type="number" min="0" max="100" placeholder="Leave empty = no deposit"/></div>
             </div>
+            <div style="font-size:12px;color:var(--tx3);margin:-4px 0 10px;line-height:1.5;">With a deposit %, the first job you schedule for a new client automatically emails them a deposit request. It is subtracted from their final invoice.</div>
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;cursor:pointer;margin-top:6px;">
+              <input type="checkbox" id="s-reminders" checked style="margin-top:3px;width:18px;height:18px;"/>
+              <span><b>Automatic payment reminders</b><br><span style="color:var(--tx3);font-size:12px;">If an invoice is not paid, we email your client a friendly reminder 1, 7 and 14 days after the due date.</span></span>
+            </label>
           </div>
         </div>
 
@@ -932,7 +937,7 @@ html,body{overflow-x:clip;overscroll-behavior:none;max-width:100%;}
       <div style="background:var(--green-light);border-radius:var(--radius);padding:12px;font-size:12px;color:var(--green-dark);line-height:1.6;margin-bottom:10px;" id="sms-preview"></div>
       <div id="sms-result" style="font-size:12px;text-align:center;min-height:18px;"></div>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById('sms-modal-bg').classList.remove('open')">Cancel</button><button class="btn btn-success" id="sms-btn" onclick="confirmSMS()">Send SMS</button></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById('sms-modal-bg').classList.remove('open')">Cancel</button><button class="btn btn-success" id="sms-btn" onclick="confirmSMS()">📱 Open text message</button></div>
   </div>
 </div>
 
@@ -1163,8 +1168,8 @@ async function loadCardStatus() {
 </script>
 
 <script src="p1.js"></script>
-<script src="p2.js?v=4"></script>
-<script src="p3.js?v=3"></script>
+<script src="p2.js?v=5"></script>
+<script src="p3.js?v=4"></script>
 <script src="p5.js?v=1"></script>
 <script src="plan-gate.js?v=1"></script>
 <script>
