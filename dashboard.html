@@ -1150,6 +1150,28 @@ async function loadCardStatus() {
 <script src="p5.js?v=1"></script>
 <script src="plan-gate.js?v=1"></script>
 <script>
+/* Creador de posts con IA (seccion Marketing, plan Pro) */
+window.AIMKT_CONFIG = {
+  mountId: 's-marketing',
+  getToken: async function(){ var r = await sb.auth.getSession(); return r && r.data && r.data.session ? r.data.session.access_token : ''; },
+  business: function(){ return { name: bizName(), phone: bizPhone(), city: bizCity() || 'Texas', website: (window._biz && window._biz.website) || '' }; },
+  recentPhotos: async function(){
+    await getBizId();
+    var r = await sb.from('pro_jobs').select('id').order('scheduled_date',{ascending:false}).limit(15);
+    var out = [];
+    for (var j of (r.data||[])) {
+      var l = await sb.storage.from('job-photos').list(j.id+'/',{limit:20});
+      (l.data||[]).forEach(function(f){
+        if(!/\.(jpe?g|png|webp)$/i.test(f.name)) return;
+        out.push({ url: sb.storage.from('job-photos').getPublicUrl(j.id+'/'+f.name).data.publicUrl, label: /^after/i.test(f.name)?'After':/^before/i.test(f.name)?'Before':'' });
+      });
+    }
+    return out;
+  }
+};
+</script>
+<script src="ai-marketing.js?v=1"></script>
+<script>
 /* Abre el portal de Stripe del pro: cambiar tarjeta, ver recibos o cancelar */
 async function openBillingPortal(btn){
   var label = btn ? btn.textContent : '';
