@@ -882,27 +882,58 @@ function prevPhoto(type,input){
   reader.onload=function(e){ document.getElementById(type+'-prev').innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg);"/>'; };
   reader.readAsDataURL(input.files[0]);
 }
+// Achica la foto (las del celular pesan mucho) y la convierte a JPG
+function shrinkPhoto(file){
+  return new Promise(function(ok){
+    var url=URL.createObjectURL(file), im=new Image();
+    im.onload=function(){
+      var max=1600, k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight));
+      var c=document.createElement('canvas'); c.width=Math.round(im.naturalWidth*k); c.height=Math.round(im.naturalHeight*k);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(url);
+      c.toBlob(function(b){ ok(b||file); },'image/jpeg',0.85);
+    };
+    im.onerror=function(){ URL.revokeObjectURL(url); ok(file); };
+    im.src=url;
+  });
+}
 async function loadExistingPhotos(jobId){
-  var res=await sb.storage.from('job-photos').list(jobId+'/',{limit:20});
-  var files=res.data||[];
   var el=document.getElementById('existing-photos');
-  if(!files.length){ el.innerHTML=''; return; }
-  el.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--tx3);margin-bottom:8px;text-transform:uppercase;">Existing photos</div>'
+  var r=await sb.from('pro_jobs').select('before_photos,after_photos').eq('id',jobId).maybeSingle();
+  var j=r.data||{}, urls=[].concat(j.before_photos||[], j.after_photos||[]);
+  if(!urls.length){ el.innerHTML=''; return; }
+  el.innerHTML='<div style="font-size:11px;font-weight:600;color:var(--tx3);margin-bottom:8px;text-transform:uppercase;">Saved photos ('+urls.length+')</div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;">'
-    +files.map(function(f){ var url=sb.storage.from('job-photos').getPublicUrl(jobId+'/'+f.name).data.publicUrl; return '<img src="'+url+'" style="width:100%;height:64px;object-fit:cover;border-radius:var(--radius);cursor:pointer;" onclick="window.open(\''+url+'\',\'_blank\')"/>'; }).join('')+'</div>';
+    +urls.map(function(url){ return '<img src="'+url+'" style="width:100%;height:64px;object-fit:cover;border-radius:var(--radius);cursor:pointer;" onclick="window.open(\''+url+'\',\'_blank\')"/>'; }).join('')+'</div>';
 }
 async function uploadPhotos(){
   if(!_bf&&!_af){ showAlert('Please select at least one photo.'); return; }
-  var btn=document.getElementById('photos-btn'); btn.textContent='Uploading...'; btn.disabled=true;
+  var btn=document.getElementById('photos-btn'), out=document.getElementById('photos-result');
+  btn.textContent='Uploading...'; btn.disabled=true; out.style.color='';
   try{
-    var ts=Date.now();
-    if(_bf) await sb.storage.from('job-photos').upload(_photoJobId+'/before-'+ts+'.jpg',_bf,{upsert:true});
-    if(_af) await sb.storage.from('job-photos').upload(_photoJobId+'/after-'+ts+'.jpg',_af,{upsert:true});
-    document.getElementById('photos-result').textContent='Photos uploaded!';
+    var bid=await getBizId(); if(!bid) throw new Error('Business not found, sign in again');
+    var ts=Date.now(), add={before:[],after:[]};
+    for(var pair of [['before',_bf],['after',_af]]){
+      if(!pair[1]) continue;
+      var blob=await shrinkPhoto(pair[1]);
+      var path=bid+'/'+_photoJobId+'/'+pair[0]+'-'+ts+'.jpg';
+      var up=await sb.storage.from('job-photos').upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+      if(up.error) throw new Error(up.error.message);
+      add[pair[0]].push(sb.storage.from('job-photos').getPublicUrl(path).data.publicUrl);
+    }
+    var cur=(await sb.from('pro_jobs').select('before_photos,after_photos').eq('id',_photoJobId).maybeSingle()).data||{};
+    var upd=await sb.from('pro_jobs').update({
+      before_photos:(cur.before_photos||[]).concat(add.before),
+      after_photos:(cur.after_photos||[]).concat(add.after)
+    }).eq('id',_photoJobId);
+    if(upd.error) throw new Error(upd.error.message);
+    out.textContent='✅ Photos saved!';
+    _bf=null; _af=null;
+    loadExistingPhotos(_photoJobId);
+    try{ loadRecentPhotos(); }catch(e){}
     setTimeout(function(){ document.getElementById('photos-modal-bg').classList.remove('open'); },1500);
   }catch(err){
-    document.getElementById('photos-result').style.color='var(--red)';
-    document.getElementById('photos-result').textContent='Error: '+err.message;
+    out.style.color='var(--red)';
+    out.textContent='Photos were NOT saved: '+err.message;
   }
   btn.textContent='Save photos'; btn.disabled=false;
 }

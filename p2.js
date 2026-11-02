@@ -476,15 +476,22 @@ async function loadReports(){
 }
 
 // ---- GALLERY ----
+async function _proPhotos(limit){
+  var res = await sb.from('pro_jobs').select('client_name,scheduled_date,before_photos,after_photos').order('scheduled_date',{ascending:false}).limit(limit);
+  var items = [];
+  (res.data||[]).forEach(function(j){
+    (j.after_photos||[]).forEach(function(u){ items.push({url:u,label:(j.client_name||'')+' — After'}); });
+    (j.before_photos||[]).forEach(function(u){ items.push({url:u,label:(j.client_name||'')+' — Before'}); });
+  });
+  return items;
+}
 async function loadGallery(){
   try{
-    var res = await sb.storage.from('job-photos').list('',{limit:50,sortBy:{column:'created_at',order:'desc'}});
-    var files = res.data||[];
+    var items = await _proPhotos(60);
     var el = document.getElementById('gallery-grid');
-    if(!files.length){ if(el) el.innerHTML='<div class="empty">No photos yet</div>'; return; }
-    if(el) el.innerHTML = files.map(function(f){
-      var url = sb.storage.from('job-photos').getPublicUrl(f.name).data.publicUrl;
-      return '<div style="border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:1;cursor:pointer;" onclick="window.open(\''+url+'\',\'_blank\')"><img src="'+url+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>';
+    if(!items.length){ if(el) el.innerHTML='<div class="empty">No photos yet</div>'; return; }
+    if(el) el.innerHTML = items.map(function(it){
+      return '<div style="border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:1;cursor:pointer;" title="'+_esc(it.label)+'" onclick="window.open(\''+it.url+'\',\'_blank\')"><img src="'+it.url+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>';
     }).join('');
   }catch(err){ console.error('loadGallery error:',err); }
 }
@@ -506,15 +513,13 @@ async function loadTimesheets(){
 // ---- RECENT PHOTOS (dashboard) ----
 async function loadRecentPhotos(){
   try{
-    var res = await sb.storage.from('job-photos').list('',{limit:6,sortBy:{column:'created_at',order:'desc'}});
-    var files = res.data||[];
+    var items = (await _proPhotos(10)).slice(0,6);
     var el = document.getElementById('recent-photos-grid');
     if(!el) return;
-    if(!files.length){ el.innerHTML='<div class="empty" style="font-size:12px;">No photos yet</div>'; return; }
-    el.innerHTML = files.map(function(f){
-      var url = sb.storage.from('job-photos').getPublicUrl(f.name).data.publicUrl;
-      return '<div style="aspect-ratio:1;border-radius:var(--radius);overflow:hidden;cursor:pointer;" onclick="window.open(\''+url+'\',\'_blank\')">'
-        +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>';
+    if(!items.length){ el.innerHTML='<div class="empty" style="font-size:12px;">No photos yet</div>'; return; }
+    el.innerHTML = items.map(function(it){
+      return '<div style="aspect-ratio:1;border-radius:var(--radius);overflow:hidden;cursor:pointer;" onclick="window.open(\''+it.url+'\',\'_blank\')">'
+        +'<img src="'+it.url+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>';
     }).join('');
   }catch(err){ console.error('loadRecentPhotos error:',err); }
 }

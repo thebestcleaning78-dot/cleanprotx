@@ -1145,8 +1145,8 @@ async function loadCardStatus() {
 </script>
 
 <script src="p1.js"></script>
-<script src="p2.js?v=2"></script>
-<script src="p3.js"></script>
+<script src="p2.js?v=3"></script>
+<script src="p3.js?v=2"></script>
 <script src="p5.js?v=1"></script>
 <script src="plan-gate.js?v=1"></script>
 <script>
@@ -1157,16 +1157,7 @@ window.AIMKT_CONFIG = {
   business: function(){ return { name: bizName(), phone: bizPhone(), city: bizCity() || 'Texas', website: (window._biz && window._biz.website) || '' }; },
   recentPhotos: async function(){
     await getBizId();
-    var r = await sb.from('pro_jobs').select('id').order('scheduled_date',{ascending:false}).limit(15);
-    var out = [];
-    for (var j of (r.data||[])) {
-      var l = await sb.storage.from('job-photos').list(j.id+'/',{limit:20});
-      (l.data||[]).forEach(function(f){
-        if(!/\.(jpe?g|png|webp)$/i.test(f.name)) return;
-        out.push({ url: sb.storage.from('job-photos').getPublicUrl(j.id+'/'+f.name).data.publicUrl, label: /^after/i.test(f.name)?'After':/^before/i.test(f.name)?'Before':'' });
-      });
-    }
-    return out;
+    return (await _proPhotos(20)).map(function(it){ return { url: it.url, label: /After$/.test(it.label) ? 'After' : 'Before' }; });
   }
 };
 </script>
