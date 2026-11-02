@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Invoice</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f4f3fb;color:#1f2937;padding:20px 14px 60px;}
+.wrap{max-width:560px;margin:0 auto;}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(30,27,75,.08);overflow:hidden;}
+.hd{background:linear-gradient(135deg,#1e1b4b,#4f46e5);color:#fff;padding:24px;text-align:center;}
+.hd h1{font-size:22px;margin-bottom:4px;}
+.hd p{font-size:13px;color:#c7d2fe;}
+.body{padding:22px;}
+.num{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.num b{font-size:18px;color:#1e1b4b;}
+.badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:#eef2ff;color:#4338ca;text-transform:uppercase;}
+.badge.paid{background:#d1fae5;color:#065f46;}
+.row{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:1px solid #f1f1f5;}
+.row span:first-child{color:#6b7280;}
+.total{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:2px solid #6366f1;}
+.total span:first-child{font-weight:700;color:#1e1b4b;}
+.total span:last-child{font-size:26px;font-weight:800;color:#4f46e5;}
+.note{font-size:12px;color:#6b7280;margin-top:12px;line-height:1.5;white-space:pre-wrap;}
+h3{font-size:14px;color:#1e1b4b;margin:22px 0 10px;}
+.pay{display:flex;align-items:center;gap:12px;border:1.5px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:10px;text-decoration:none;color:#111827;}
+.pay .ic{font-size:22px;}
+.pay .t{font-weight:700;font-size:14px;}
+.pay .s{font-size:12px;color:#6b7280;}
+.pay.venmo{border-color:#93c5fd;background:#eff6ff;}
+.pay.cash{border-color:#86efac;background:#f0fdf4;}
+.pay.zelle{border-color:#c4b5fd;background:#f5f3ff;}
+.copy{margin-left:auto;font-size:11px;border:1px solid #d1d5db;background:#fff;border-radius:8px;padding:5px 8px;cursor:pointer;}
+.foot{text-align:center;font-size:12px;color:#6b7280;margin-top:18px;line-height:1.6;}
+.err{text-align:center;padding:60px 20px;color:#6b7280;}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap"><div class="err">Loading invoice…</div></div>
+<script>
+var FN = 'https://yfqoncqoerleoaqxvaie.supabase.co/functions/v1/pro-invoice';
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function money(n){ return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fdate(d){ var s=String(d||'').slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function copyText(t,btn){ navigator.clipboard.writeText(t).then(function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy';},1500); }); }
+
+(async function(){
+  var id = new URLSearchParams(location.search).get('id');
+  var wrap = document.getElementById('wrap');
+  try{
+    var r = await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'view',id:id})});
+    var d = await r.json();
+    if(!r.ok || !d.invoice) throw new Error(d.error||'Invoice not found.');
+    var inv = d.invoice, biz = d.business||{};
+    var num = String(inv.invoice_number||0).padStart(3,'0');
+    var paid = inv.status==='Paid';
+    var due = inv.balance!=null ? inv.balance : inv.amount;
+    document.title = (inv.is_deposit?'Deposit':'Invoice')+' #'+num+' — '+(biz.business_name||'');
+
+    var venmo = String(biz.venmo_handle||'').replace(/^@/,''), cash = String(biz.cashapp_tag||'').replace(/^\$/,''), zelle = biz.zelle_info||'';
+    var pays = '';
+    if(!paid){
+      if(venmo) pays += '<a class="pay venmo" target="_blank" href="https://venmo.com/u/'+encodeURIComponent(venmo)+'"><span class="ic">💙</span><span><div class="t">Venmo</div><div class="s">@'+esc(venmo)+'</div></span></a>';
+      if(cash) pays += '<a class="pay cash" target="_blank" href="https://cash.app/$'+encodeURIComponent(cash)+'/'+Number(due||0).toFixed(2)+'"><span class="ic">💚</span><span><div class="t">Cash App</div><div class="s">$'+esc(cash)+'</div></span></a>';
+      if(zelle) pays += '<div class="pay zelle"><span class="ic">💜</span><span><div class="t">Zelle</div><div class="s">'+esc(zelle)+'</div></span><button class="copy" onclick="copyText(\''+esc(zelle).replace(/'/g,"\\'")+'\',this)">Copy</button></div>';
+      pays += '<div class="pay"><span class="ic">💵</span><span><div class="t">Cash or check</div><div class="s">In person</div></span></div>';
+    }
+
+    wrap.innerHTML = '<div class="card">'
+      +'<div class="hd"><h1>'+esc(biz.business_name||'Invoice')+'</h1><p>'+esc(biz.city||'')+'</p></div>'
+      +'<div class="body">'
+        +'<div class="num"><b>'+(inv.is_deposit?'Deposit':'Invoice')+' #'+num+'</b><span class="badge'+(paid?' paid':'')+'">'+esc(paid?'Paid':(inv.status||'Due'))+'</span></div>'
+        +'<div class="row"><span>Billed to</span><span>'+esc(inv.client_name)+'</span></div>'
+        +'<div class="row"><span>Service</span><span>'+esc(inv.service||'Service')+'</span></div>'
+        +'<div class="row"><span>Date</span><span>'+esc(fdate(inv.issue_date))+'</span></div>'
+        +'<div class="row"><span>Due</span><span>'+esc(fdate(inv.due_date))+'</span></div>'
+        +'<div class="total"><span>'+(paid?'Total paid':'Amount due')+'</span><span>'+money(paid?inv.amount:due)+'</span></div>'
+        +(inv.notes?'<div class="note">'+esc(inv.notes)+'</div>':'')
+        +(paid?'<h3>✅ Thank you! This invoice is paid.</h3>':'<h3>How to pay</h3>'+pays+(biz.payment_note?'<div class="note">'+esc(biz.payment_note)+'</div>':'')
+          +'<div class="note">Please include invoice #'+num+' in the payment note.</div>')
+      +'</div></div>'
+      +'<div class="foot">Questions? '+(biz.phone?'Call or text <a href="tel:'+esc(String(biz.phone).replace(/\D/g,''))+'">'+esc(biz.phone)+'</a>':'')
+      +(biz.email?'<br><a href="mailto:'+esc(biz.email)+'">'+esc(biz.email)+'</a>':'')+'<br><span style="font-size:11px;">Sent with CleanPro TX</span></div>';
+  }catch(e){
+    wrap.innerHTML = '<div class="err">'+esc(e.message)+'</div>';
+  }
+})();
+</script>
+</body>
+</html>

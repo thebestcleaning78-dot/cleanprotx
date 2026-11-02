@@ -625,70 +625,50 @@ function openInvoiceSendModal(inv, email, phone){
   document.getElementById('inv-modal-bg').classList.add('open');
 }
 
+// Manda la factura del pro: por correo (servidor pro-invoice) o abre el
+// SMS / WhatsApp del celular del pro con el enlace de la factura.
+var PRO_INVOICE_FN = 'https://yfqoncqoerleoaqxvaie.supabase.co/functions/v1/pro-invoice';
+function proInvoiceViewUrl(id){ return 'https://cleanprotx.vercel.app/invoice-view.html?id='+id; }
+async function proEmailInvoice(invoiceId, to){
+  var t = (await sb.auth.getSession()).data.session;
+  var r = await fetch(PRO_INVOICE_FN,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(t?t.access_token:'')},
+    body:JSON.stringify({action:'email',invoice_id:invoiceId,to:to})});
+  var d = await r.json().catch(function(){ return {}; });
+  if(!r.ok || !d.ok) throw new Error(d.error||('Email error '+r.status));
+  return d;
+}
+function proInvoiceText(inv){
+  var n=String(inv.invoice_number||0).padStart(3,'0');
+  var amt=Number(inv.balance!=null?inv.balance:inv.amount||0).toFixed(2);
+  return 'Hi '+String(inv.client_name||'').split(' ')[0]+', this is '+bizName()+'. '+(inv.is_deposit?'Deposit':'Invoice')+' #'+n+' for $'+amt
+    +(inv.due_date?' is due '+fmtD(inv.due_date):'')+'. View & pay: '+proInvoiceViewUrl(inv.id)+' Thank you!';
+}
 async function confirmSendInvoice(){
   var inv = window._currentInv;
   if(!inv){ showAlert('No invoice selected.'); return; }
-  var btn = document.getElementById('inv-send-btn');
-  btn.textContent='Sending...'; btn.disabled=true;
+  var btn = document.getElementById('inv-send-btn'), out = document.getElementById('inv-result');
+  btn.textContent='Sending...'; btn.disabled=true; out.textContent='';
   var via = document.querySelector('input[name="inv-via"]:checked');
   var viaVal = via ? via.value : 'email';
   var email = document.getElementById('inv-email').value.trim();
-  var phone = document.getElementById('inv-phone').value.trim().replace(/\D/g,'');
-  var note = ''; try{ note=document.getElementById('inv-note').value; }catch(e){}
+  var phone = document.getElementById('inv-phone').value.trim().replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
   try{
-    // 1. Crear link de pago Stripe siempre
-    var payUrl = inv.payment_url || '';
-    if(!payUrl){
-      try{
-        var plRes = await sb.functions.invoke('create-invoice-payment',{body:{
-          invoice_id: inv.id,
-          client_name: inv.client_name,
-          amount: Number(inv.amount||0),
-          invoice_number: inv.invoice_number,
-          description: inv.service||'Cleaning Service'
-        }});
-        if(plRes.data&&plRes.data.url) payUrl=plRes.data.url;
-      }catch(e){ console.log('Stripe link error:',e); }
-    }
-
-    // 2. Guardar payment_url en el invoice
-    if(payUrl){
-      await sb.from('pro_invoices').update({payment_url:payUrl}).eq('id',inv.id);
-    }
-
-    if(viaVal==='email'&&email){
-      // Usar send-invoice-email con invoice_id y view link
-      var viewUrl = window.location.origin+'/invoice-view.html?id='+inv.id;
-      var emailRes = await sb.functions.invoke('send-invoice-email',{body:{
-        invoice_id: inv.id,
-        to: email,
-        view_url: viewUrl
-      }});
-      if(emailRes.error) throw new Error('Email error: '+JSON.stringify(emailRes.error));
-      await sb.from('pro_invoices').update({status:'Sent',client_email:email}).eq('id',inv.id);
-      document.getElementById('inv-result').style.color='var(--green)';
-      document.getElementById('inv-result').textContent='Invoice sent to '+email+'! ✅';
-    }
-    if(viaVal==='whatsapp'&&phone){
-      var invNum=String(inv.invoice_number||0).padStart(3,'0');
-      var msg='Hi '+inv.client_name+'! 🧹\n\nYour invoice #'+invNum+' for $'+Number(inv.amount||0).toFixed(2)+' is ready.\nService: '+(inv.service||'Cleaning Service')+'\nDue: '+fmtD(inv.due_date)+'.'+(payUrl?'\n\n💳 Pay here: '+payUrl:'')+(note?'\n\nNote: '+note:'')+'\n\nThank you! — '+bizName()+' '+bizPhone();
-      window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
-      await sb.from('pro_invoices').update({status:'Sent'}).eq('id',inv.id);
-      document.getElementById('inv-result').style.color='var(--green)';
-      document.getElementById('inv-result').textContent='WhatsApp opened! ✅';
-    }
-    if(viaVal==='sms'&&phone){
-      var invNum2=String(inv.invoice_number||0).padStart(3,'0');
-      await sb.functions.invoke('smooth-responder',{body:{to:phone,custom_message:'Hi '+inv.client_name+'! Invoice #'+invNum2+' for $'+Number(inv.amount||0).toFixed(2)+'. Due: '+fmtD(inv.due_date)+'.'+(payUrl?' Pay: '+payUrl:'')+' — '+bizName()+' '+bizPhone()}});
-      await sb.from('pro_invoices').update({status:'Sent'}).eq('id',inv.id);
-      document.getElementById('inv-result').style.color='var(--green)';
-      document.getElementById('inv-result').textContent='SMS sent! ✅';
+    if(viaVal==='email'){
+      if(!email) throw new Error('Add the client email first.');
+      await proEmailInvoice(inv.id, email);
+      out.style.color='var(--green)'; out.textContent='Invoice emailed to '+email+' ✅';
+    } else {
+      if(phone.length!==10) throw new Error('Add a 10-digit phone number first.');
+      var msg = proInvoiceText(inv);
+      if(viaVal==='whatsapp') window.open('https://wa.me/1'+phone+'?text='+encodeURIComponent(msg),'_blank');
+      else window.location.href = 'sms:+1'+phone+(/iPhone|iPad|Mac/i.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(msg);
+      await sb.from('pro_invoices').update({status: inv.status==='Draft'?'Sent':inv.status, client_phone:phone, sent_at:new Date().toISOString()}).eq('id',inv.id);
+      out.style.color='var(--green)'; out.textContent=(viaVal==='whatsapp'?'WhatsApp':'Messages')+' opened with the invoice link ✅';
     }
     loadInvoices();
     setTimeout(function(){ document.getElementById('inv-modal-bg').classList.remove('open'); },2000);
   }catch(err){
-    document.getElementById('inv-result').style.color='var(--red)';
-    document.getElementById('inv-result').textContent='Error: '+err.message;
+    out.style.color='var(--red)'; out.textContent='Not sent: '+err.message;
   }
   btn.textContent='Send Invoice'; btn.disabled=false;
 }
@@ -993,8 +973,15 @@ async function saveSettings(){
       service_type: gv('s-service'),
       city: gv('s-city'),
       address: gv('s-address'),
-      website: gv('s-website')
+      website: gv('s-website'),
+      venmo_handle: gv('s-venmo').trim().replace(/^@/,'') || null,
+      cashapp_tag: gv('s-cashapp').trim().replace(/^\$/,'') || null,
+      zelle_info: gv('s-zelle').trim() || null,
+      payment_note: gv('s-paynote').trim() || null,
+      default_terms_days: gv('s-terms')==='' ? null : Math.max(0, Math.min(60, parseInt(gv('s-terms'),10)||0)),
+      deposit_percent: gv('s-deposit')==='' ? null : Math.max(0, Math.min(100, parseFloat(gv('s-deposit'))||0))
     }).eq('id', bid);
+    if(!res.error){ var bz=(await sb.from('businesses').select('*').eq('id',bid).maybeSingle()).data; if(bz) window._biz=bz; }
     if(res.error) throw res.error;
     try{ document.querySelector('.logo-text').textContent = gv('s-bizname'); }catch(e){}
     var el = document.getElementById('settings-result');
@@ -1143,68 +1130,49 @@ function quickJob(clientId){
 
 
 // ---- AUTO CREATE INVOICE WHEN JOB COMPLETED (like Jobber) ----
+// Crea la factura del trabajo (una sola por trabajo), descuenta depositos
+// pagados del cliente y, si tiene email, se la manda sola.
 async function autoCreateInvoice(jobId, clientName, service, amount){
   try{
     var bid = await getBizId();
-    // Get next invoice number
+    var ex = await sb.from('pro_invoices').select('id,invoice_number').eq('job_id',jobId).limit(1);
+    if(ex.data && ex.data.length){ showAlert('Job completed! Invoice #'+String(ex.data[0].invoice_number||0).padStart(3,'0')+' already exists for this job.'); return; }
+    if(!(amount>0)){ showAlert('Job completed! Add an amount to the job to create its invoice.'); return; }
+
+    var cliRes = await sb.from('pro_clients').select('id,email,phone,payment_terms').ilike('name',clientName).limit(1);
+    var cli = cliRes.data&&cliRes.data.length ? cliRes.data[0] : {};
+    var terms = parseInt(cli.payment_terms,10); if(!(terms>=0)) terms = (window._biz&&window._biz.default_terms_days!=null) ? Number(window._biz.default_terms_days) : 2;
+    var due = new Date(); due.setDate(due.getDate()+terms);
+
+    // Depositos pagados que todavia no se han descontado
+    var dRes = await sb.from('pro_invoices').select('id,amount,invoice_number').eq('is_deposit',true).eq('status','Paid').is('deposit_applied_invoice_id',null).ilike('client_name',clientName);
+    var depTotal=0, depUse=[];
+    (dRes.data||[]).forEach(function(d){ if(depTotal<amount){ depTotal+=Number(d.amount||0); depUse.push(d); } });
+    depTotal=Math.min(depTotal,amount);
+    var balance=Math.round((amount-depTotal)*100)/100;
+
     var iRes = await sb.from('pro_invoices').select('invoice_number').order('invoice_number',{ascending:false}).limit(1);
     var invN = (iRes.data&&iRes.data.length?(iRes.data[0].invoice_number||0):0)+1;
-    var due = new Date(); due.setDate(due.getDate()+7);
-    var dueStr = due.toISOString().slice(0,10);
-
-    // Create invoice
+    var label = (service||'Regular Cleaning')+(depTotal>0?' (balance after $'+depTotal.toFixed(2)+' deposit)':'');
     var invRes = await sb.from('pro_invoices').insert([{
-      invoice_number: invN,
-      client_name: clientName,
-      service: service||'Regular Cleaning',
-      description: service||'Regular Cleaning',
-      amount: amount,
-      balance: amount,
-      due_date: dueStr,
-      issue_date: new Date().toISOString().slice(0,10),
-      status: 'Draft',
-      tax_rate: 0,
-      discount: 0,
-      notes: 'Auto-generated from job completion',
-      job_id: jobId,
-      business_id: bid
+      invoice_number: invN, client_id: cli.id||null, client_name: clientName, service: label, description: label,
+      amount: balance, balance: balance, due_date: due.toLocaleDateString('en-CA'), issue_date: new Date().toLocaleDateString('en-CA'),
+      status: balance>0?'Draft':'Paid', tax_rate: 0, discount: 0,
+      notes: depTotal>0 ? 'Total $'+Number(amount).toFixed(2)+' minus deposit paid $'+depTotal.toFixed(2)+'.' : '',
+      job_id: jobId, business_id: bid, client_email: cli.email||null, client_phone: cli.phone||null
     }]).select().single();
-
     if(invRes.error) throw invRes.error;
     var newInv = invRes.data;
+    if(depUse.length) await sb.from('pro_invoices').update({deposit_applied_invoice_id:newInv.id}).in('id',depUse.map(function(d){return d.id;}));
+    var n = String(invN).padStart(3,'0');
+    if(balance<=0){ showAlert('Job completed! The deposit covered the full price.'); loadInvoices(); return; }
 
-    // Create Stripe payment link
-    var payRes = await sb.functions.invoke('create-invoice-payment',{body:{
-      invoice_id: newInv.id,
-      client_name: clientName,
-      amount: amount,
-      invoice_number: invN,
-      description: service||'Regular Cleaning'
-    }});
-    var payUrl = payRes.data&&payRes.data.url ? payRes.data.url : '';
-
-    // Save payment_url
-    if(payUrl){
-      await sb.from('pro_invoices').update({payment_url:payUrl}).eq('id',newInv.id);
-      newInv.payment_url = payUrl;
-    }
-
-    // Get client email
-    var cliRes = await sb.from('pro_clients').select('email,phone').ilike('name',clientName).limit(1);
-    var cli = cliRes.data&&cliRes.data.length ? cliRes.data[0] : {};
-
-    // Send email if client has email
     if(cli.email){
-      await sb.functions.invoke('send-invoice-email',{body:{
-        invoice_id: newInv.id,
-        to: cli.email
-      }});
-      await sb.from('pro_invoices').update({status:'Sent',client_email:cli.email}).eq('id',newInv.id);
-      showAlert('Job completed! Invoice #'+String(invN).padStart(3,'0')+' created and sent to '+cli.email+' with Pay Now link. 🎉');
+      try{ await proEmailInvoice(newInv.id, cli.email); showAlert('Job completed! Invoice #'+n+' for $'+balance.toFixed(2)+' was emailed to '+cli.email+' 🎉'); }
+      catch(e){ showAlert('Job completed! Invoice #'+n+' created, but the email failed: '+e.message+'. Send it from Invoices.'); }
     } else {
-      showAlert('Job completed! Invoice #'+String(invN).padStart(3,'0')+' created for $'+amount+'. Add client email to send automatically.');
+      showAlert('Job completed! Invoice #'+n+' created for $'+balance.toFixed(2)+'. Open it in Invoices and send it by text.');
     }
-
     loadInvoices();
   }catch(err){
     console.error('Auto invoice error:',err);

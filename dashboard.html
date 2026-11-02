@@ -752,6 +752,24 @@ html,body{overflow-x:clip;overscroll-behavior:none;max-width:100%;}
           </div>
         </div>
 
+        <!-- Como te pagan tus clientes (sale en tus facturas) -->
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><div class="card-title">💵 How your clients pay you</div><button class="btn btn-primary btn-sm" onclick="saveSettings()">Save changes</button></div>
+          <div class="card-body">
+            <div style="font-size:12px;color:var(--tx3);margin-bottom:12px;">These show on every invoice you send. The money goes straight to you — CleanPro never touches it.</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Venmo username</label><input class="form-input" id="s-venmo" placeholder="@your-venmo"/></div>
+              <div class="form-group"><label class="form-label">Cash App $cashtag</label><input class="form-input" id="s-cashapp" placeholder="$yourcashtag"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Zelle (phone or email)</label><input class="form-input" id="s-zelle" placeholder="(806) 555-0000 or you@email.com"/></div>
+            <div class="form-group"><label class="form-label">Note on invoices (optional)</label><input class="form-input" id="s-paynote" placeholder="e.g. Checks payable to My Cleaning LLC"/></div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Days to pay (default)</label><input class="form-input" id="s-terms" type="number" min="0" max="60" placeholder="2"/></div>
+              <div class="form-group"><label class="form-label">Deposit for new bookings (%)</label><input class="form-input" id="s-deposit" type="number" min="0" max="100" placeholder="30"/></div>
+            </div>
+          </div>
+        </div>
+
         <!-- ============================================================
              PAYMENT METHOD — STRIPE ELEMENTS
              ============================================================ -->
@@ -1145,8 +1163,8 @@ async function loadCardStatus() {
 </script>
 
 <script src="p1.js"></script>
-<script src="p2.js?v=3"></script>
-<script src="p3.js?v=2"></script>
+<script src="p2.js?v=4"></script>
+<script src="p3.js?v=3"></script>
 <script src="p5.js?v=1"></script>
 <script src="plan-gate.js?v=1"></script>
 <script>

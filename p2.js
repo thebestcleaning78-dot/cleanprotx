@@ -661,6 +661,12 @@ async function loadSettings(){
     try{ document.getElementById('s-city').value = biz.city||''; }catch(e){}
     try{ document.getElementById('s-address').value = biz.address||''; }catch(e){}
     try{ document.getElementById('s-website').value = biz.website||''; }catch(e){}
+    try{ document.getElementById('s-venmo').value = biz.venmo_handle||''; }catch(e){}
+    try{ document.getElementById('s-cashapp').value = biz.cashapp_tag||''; }catch(e){}
+    try{ document.getElementById('s-zelle').value = biz.zelle_info||''; }catch(e){}
+    try{ document.getElementById('s-paynote').value = biz.payment_note||''; }catch(e){}
+    try{ document.getElementById('s-terms').value = biz.default_terms_days!=null ? biz.default_terms_days : ''; }catch(e){}
+    try{ document.getElementById('s-deposit').value = biz.deposit_percent!=null ? biz.deposit_percent : ''; }catch(e){}
     try{ document.getElementById('s-plan-name').textContent = (biz.plan||'Basic')+' Plan'; }catch(e){}
     try{ document.getElementById('s-plan-status').textContent = biz.status||'Active'; }catch(e){}
     var user = await sb.auth.getUser();
